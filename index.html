@@ -178,7 +178,9 @@
   }
   #gate-remember-row{
     display:flex;
-    justify-content:space-between;
+    flex-wrap:wrap;
+    justify-content:flex-start;
+    gap:10px 16px;
     margin-top:14px;
   }
   #gate-remember-label{
@@ -259,26 +261,6 @@
     color:#8fa8c7;
     font-size:10.5px;
   }
-  #btn-clear-selection{
-    padding:7px 14px;
-    font-size:12.5px;
-    font-weight:700;
-    border:1.5px solid #ffd166;
-    background:rgba(255,209,102,.15);
-    border-radius:20px;
-    cursor:pointer;
-    color:#ffe9a8;
-    white-space:nowrap;
-    flex-shrink:0;
-    display:inline-flex;
-    align-items:center;
-    gap:4px;
-  }
-  #btn-clear-selection::before{
-    content:'✕';
-    font-size:10px;
-  }
-  #btn-clear-selection:active{background:rgba(255,209,102,.28);}
   #header-main{
     padding:10px 16px;
     display:flex;
@@ -626,6 +608,37 @@
   }
   #sort-select:focus{border-color:var(--gov-blue);outline:none;}
   #sort-select:disabled{opacity:.5;cursor:not-allowed;}
+
+  /* ===== 목록 상단 '전체보기' 항목 ===== */
+  #list-clear-selection{
+    display:none;
+    align-items:center;
+    gap:8px;
+    padding:12px 16px;
+    background:var(--gov-blue-light);
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+    font-size:13px;
+    font-weight:700;
+    color:var(--gov-blue);
+    transition:background .12s;
+  }
+  #list-clear-selection.show{display:flex;}
+  #list-clear-selection:hover{background:#d8e8fb;}
+  #list-clear-selection::before{
+    content:'✕';
+    font-size:11px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:var(--gov-blue);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+
   .site-item .sdist{
     color:var(--gov-blue);
     font-size:11.5px;
@@ -983,6 +996,9 @@
           <input type="checkbox" id="gate-remember-id"> 아이디 저장
         </label>
         <label id="gate-remember-label">
+          <input type="checkbox" id="gate-remember-pw"> 비밀번호 저장
+        </label>
+        <label id="gate-remember-label">
           <input type="checkbox" id="gate-auto-login"> 자동 로그인
         </label>
       </div>
@@ -1001,7 +1017,7 @@
     <span id="header-update-date"></span>
   </div>
   <div id="header-main">
-    <button id="btn-clear-selection" style="display:none">전체보기</button>
+    <span id="header-title-holder" style="display:none"></span>
     <h1 id="header-title">강남구 <span>사업장 지도</span></h1>
     <div class="stat-chip" id="header-stat"><b id="stat-total">-</b>건 표시중</div>
     <div id="search-box">
@@ -1090,8 +1106,9 @@ async function tryUnlock(id, pw, otp){
   return JSON.parse(text);
 }
 
-/* ===== 아이디 저장 ===== */
+/* ===== 아이디/비밀번호 저장 ===== */
 const SAVED_ID_KEY = 'gnmap_saved_id';
+const SAVED_PW_KEY = 'gnmap_saved_pw';
 const AUTO_LOGIN_KEY = 'gnmap_auto_login';
 
 function loadSavedId(){
@@ -1100,18 +1117,32 @@ function loadSavedId(){
     document.getElementById('gate-id').value = saved;
     document.getElementById('gate-remember-id').checked = true;
   }
+  const savedPw = localStorage.getItem(SAVED_PW_KEY);
+  if(savedPw){
+    try{
+      document.getElementById('gate-pw').value = decodeURIComponent(escape(atob(savedPw)));
+      document.getElementById('gate-remember-pw').checked = true;
+    }catch(e){ /* 저장값 손상 시 무시 */ }
+  }
   if(localStorage.getItem(AUTO_LOGIN_KEY) === '1'){
     document.getElementById('gate-auto-login').checked = true;
   }
 }
 
-function applyRememberSettings(id){
+function applyRememberSettings(id, pw){
   const rememberId = document.getElementById('gate-remember-id').checked;
+  const rememberPw = document.getElementById('gate-remember-pw').checked;
   const autoLogin = document.getElementById('gate-auto-login').checked;
+
   if(rememberId){
     localStorage.setItem(SAVED_ID_KEY, id);
   }else{
     localStorage.removeItem(SAVED_ID_KEY);
+  }
+  if(rememberPw){
+    localStorage.setItem(SAVED_PW_KEY, btoa(unescape(encodeURIComponent(pw))));
+  }else{
+    localStorage.removeItem(SAVED_PW_KEY);
   }
   if(autoLogin){
     localStorage.setItem(AUTO_LOGIN_KEY, '1');
@@ -1150,7 +1181,7 @@ async function doLogin(){
   errEl.textContent = '';
   try{
     const data = await tryUnlock(id, pw, otp);
-    applyRememberSettings(id);
+    applyRememberSettings(id, pw);
     if(document.getElementById('gate-auto-login').checked){
       sessionStorage.setItem('gnmap_session', btoa(unescape(encodeURIComponent(JSON.stringify({id:id, pw:pw, otp:otp})))));
     }
@@ -1468,7 +1499,6 @@ function applyView(){
     }
     document.getElementById('stat-total').textContent = targetSites.length;
     document.getElementById('header-title').innerHTML = escapeHtml(selectedDong) + ' <span>사업장</span>';
-    document.getElementById('btn-clear-selection').style.display = 'inline-flex';
     document.getElementById('overview-hint').style.display = 'none';
     if(window.innerWidth <= 760){ setSheetState('sheet-mid'); }
   }else{
@@ -1477,7 +1507,6 @@ function applyView(){
     }
     document.getElementById('stat-total').textContent = filtered.length;
     document.getElementById('header-title').innerHTML = '강남구 <span>사업장 지도</span>';
-    document.getElementById('btn-clear-selection').style.display = 'none';
     document.getElementById('overview-hint').style.display = 'block';
     if(window.innerWidth <= 760){ setSheetState('sheet-peek'); }
   }
@@ -1605,6 +1634,16 @@ function renderSitesList(listEl, filterText){
   }
 
   const frag = document.createDocumentFragment();
+
+  // 동이 선택되어 있을 때만 노출되는 '전체보기' 항목 (목록 최상단)
+  if(selectedDong){
+    const clearItem = document.createElement('div');
+    clearItem.id = 'list-clear-selection';
+    clearItem.className = 'show';
+    clearItem.textContent = '전체보기 (' + selectedDong + ' 선택 해제)';
+    clearItem.addEventListener('click', () => clearSelection());
+    frag.appendChild(clearItem);
+  }
 
   // 정렬 드롭바 (항상 표시)
   const sortBar = document.createElement('div');
@@ -2065,9 +2104,6 @@ function attachHandlers(){
     document.getElementById('btn-tab-sites').classList.remove('active');
     document.getElementById('search-input').value = '';
     renderSideList();
-  });
-  document.getElementById('btn-clear-selection').addEventListener('click', () => {
-    clearSelection();
   });
 
   let searchDebounce = null;
