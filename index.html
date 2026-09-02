@@ -559,6 +559,80 @@
   .legend div{display:flex;align-items:center;gap:6px;margin:3px 0;}
   .legend .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 
+  /* ===== 내 위치 버튼 ===== */
+  #btn-locate{
+    position:absolute;
+    right:14px;
+    bottom:14px;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    box-shadow:0 3px 12px rgba(11,61,110,.18);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    color:var(--gov-navy);
+    z-index:6;
+    transition:background .12s, color .12s;
+  }
+  #btn-locate:hover{background:var(--gov-blue-light);}
+  #btn-locate.active{
+    background:var(--gov-navy);
+    color:#fff;
+  }
+  #btn-locate.loading svg{
+    animation:locate-spin 1s linear infinite;
+  }
+  @keyframes locate-spin{
+    from{transform:rotate(0deg);}
+    to{transform:rotate(360deg);}
+  }
+
+  #my-location-marker{
+    width:18px;height:18px;
+    border-radius:50%;
+    background:var(--gov-blue);
+    border:3px solid #fff;
+    box-shadow:0 0 0 4px rgba(24,102,200,.25), 0 2px 8px rgba(0,0,0,.3);
+  }
+
+  /* ===== 목록 정렬 드롭다운 ===== */
+  #sort-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 16px;
+    background:var(--bg);
+    border-bottom:1px solid var(--line);
+    font-size:12px;
+  }
+  #sort-bar label{
+    color:var(--ink-soft);
+    font-weight:600;
+    margin-right:6px;
+  }
+  #sort-select{
+    padding:6px 10px;
+    border:1.5px solid var(--line);
+    border-radius:7px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    background:#fff;
+    cursor:pointer;
+  }
+  #sort-select:focus{border-color:var(--gov-blue);outline:none;}
+  #sort-select:disabled{opacity:.5;cursor:not-allowed;}
+  .site-item .sdist{
+    color:var(--gov-blue);
+    font-size:11.5px;
+    font-weight:700;
+    margin-top:3px;
+  }
+
   /* ===== 개요 화면(동별 폴리곤 라벨) ===== */
   .dong-overlay-label{
     background:rgba(11,61,110,.92);
@@ -856,9 +930,15 @@
     .ci-btn{padding:9px 6px;font-size:12.5px;}
 
     .legend{
-      left:10px; bottom:10px;
+      left:10px; bottom:120px;
       padding:8px 11px;
       font-size:10.5px;
+    }
+    #btn-locate{
+      right:12px;
+      bottom:120px;
+      width:42px;
+      height:42px;
     }
 
     #gate-box{padding:30px 24px 26px;width:100%;}
@@ -951,6 +1031,12 @@
     <div id="map-loading">지도를 불러오는 중…</div>
     <div id="map"></div>
     <div id="overview-hint">강남구 전체 현황 · 동을 눌러 사업장을 확인하세요 (다시 누르면 해제)</div>
+    <button id="btn-locate" title="내 위치">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+        <path d="M12 2V5M12 19V22M22 12H19M5 12H2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
     <div class="legend" id="map-legend">
       <div><span class="dot" style="background:#0b3d6e"></span>사업장 위치</div>
       <div><span class="dot" style="background:#0b3d6e;opacity:.4"></span>정확도 낮음(참고용)</div>
@@ -1128,12 +1214,17 @@ let map, clusterer;
 let markers = [];
 let dongPolygons = {};   // dongName -> [polygon, ...]
 let dongLabelOverlays = {}; // dongName -> overlay
+let dongBounds = {};     // dongName -> kakao.maps.LatLngBounds (해당 동 경계 전체)
 let currentInfo = null;
 let activeTab = 'sites';
 let CONFIRMED, REVIEW;
 let selectedDong = null;   // 토글 선택된 행정동 (null = 전체보기)
 let amountMin = 0, amountMax = null;
 let baseBounds = null;     // 강남구 전체 bounds (전체보기 복귀용)
+let myLocation = null;     // {lat, lng} 내 위치
+let myLocationMarker = null;
+let sortMode = 'default';  // 'default' | 'distance'
+let locateWatching = false;
 
 const DONG_ORDER = ['신사동','논현1동','논현2동','압구정동','청담동','삼성1동','삼성2동',
   '대치1동','대치2동','대치4동','역삼1동','역삼2동','도곡1동','도곡2동',
@@ -1183,6 +1274,7 @@ function initApp(){
     attachHandlers();
     attachMobileSheet();
     attachAmountFilter();
+    attachLocateButton();
   });
 }
 
@@ -1211,6 +1303,7 @@ function buildDongPolygons(){
     const dongName = feat.properties.adm_nm;
     const paths = geomToPaths(feat.geometry);
     dongPolygons[dongName] = [];
+    const thisDongBounds = new kakao.maps.LatLngBounds();
 
     paths.forEach(path => {
       const polygon = new kakao.maps.Polygon({
@@ -1227,8 +1320,10 @@ function buildDongPolygons(){
         toggleDong(dongName);
       });
       dongPolygons[dongName].push(polygon);
-      path.forEach(p => bounds.extend(p));
+      path.forEach(p => { bounds.extend(p); thisDongBounds.extend(p); });
     });
+
+    dongBounds[dongName] = thisDongBounds;
 
     const center = polygonCenter(paths[0]);
     if(center){
@@ -1361,10 +1456,15 @@ function applyView(){
     activeMarkers.forEach(m => m.setMap(map));
     clusterer.addMarkers(activeMarkers);
 
-    if(activeMarkers.length > 0){
-      const b = new kakao.maps.LatLngBounds();
-      activeMarkers.forEach(m => b.extend(m.getPosition()));
-      map.setBounds(b, 60, 60, 60, 60);
+    if(dongBounds[selectedDong] && !dongBounds[selectedDong].isEmpty()){
+      // 사업장 위치가 아니라 '동 경계 전체'를 기준으로 맞춰서, 항상 그 동의 정중앙이 화면 중심이 되게 함
+      const combined = new kakao.maps.LatLngBounds(
+        dongBounds[selectedDong].getSouthWest(),
+        dongBounds[selectedDong].getNorthEast()
+      );
+      // 동 경계 밖에 있는 사업장(경계 오차 등)이 있으면 화면에서 잘리지 않도록 포함시킴
+      activeMarkers.forEach(m => combined.extend(m.getPosition()));
+      map.setBounds(combined, 30, 30, 30, 30);
     }
     document.getElementById('stat-total').textContent = targetSites.length;
     document.getElementById('header-title').innerHTML = escapeHtml(selectedDong) + ' <span>사업장</span>';
@@ -1497,74 +1597,126 @@ function renderSitesList(listEl, filterText){
   if(selectedDong){
     base = base.filter(s => (s.sd || s.d) === selectedDong);
   }
-  const filtered = base.filter(s => matchesFilter(s, filterText));
+  let filtered = base.filter(s => matchesFilter(s, filterText));
+
+  // 거리 계산(내 위치가 있을 때)
+  if(myLocation){
+    filtered = filtered.map(s => ({...s, _dist: distanceMeters(myLocation.lat, myLocation.lng, s.lat, s.lng)}));
+  }
+
+  const frag = document.createDocumentFragment();
+
+  // 정렬 드롭바 (항상 표시)
+  const sortBar = document.createElement('div');
+  sortBar.id = 'sort-bar';
+  sortBar.innerHTML =
+    '<label>정렬</label>' +
+    '<select id="sort-select" ' + (myLocation ? '' : 'disabled') + '>' +
+      '<option value="default"' + (sortMode==='default'?' selected':'') + '>동 순서</option>' +
+      '<option value="distance"' + (sortMode==='distance'?' selected':'') + '>내 위치에서 가까운 순</option>' +
+    '</select>';
+  frag.appendChild(sortBar);
 
   if(filtered.length === 0){
-    listEl.innerHTML = '<div id="empty-msg">조건에 맞는 사업장이 없습니다.</div>';
+    const empty = document.createElement('div');
+    empty.id = 'empty-msg';
+    empty.textContent = '조건에 맞는 사업장이 없습니다.';
+    frag.appendChild(empty);
+    listEl.innerHTML = '';
+    listEl.appendChild(frag);
+    bindSortSelect(listEl);
     return;
   }
 
-  const groups = {};
-  filtered.forEach(s => {
-    const key = s.sd || s.d || '기타';
-    if(!groups[key]) groups[key] = [];
-    groups[key].push(s);
-  });
-
-  const dongKeys = Object.keys(groups).sort((a,b) => {
-    const ia = DONG_ORDER.indexOf(a), ib = DONG_ORDER.indexOf(b);
-    return (ia<0?999:ia) - (ib<0?999:ib);
-  });
-
-  const frag = document.createDocumentFragment();
-  const forceOpen = !!(filterText || selectedDong || dongKeys.length === 1);
-  dongKeys.forEach(dong => {
-    const items = groups[dong];
-    const groupDiv = document.createElement('div');
-    groupDiv.className = 'dong-group';
-
-    const head = document.createElement('div');
-    head.className = 'dong-head' + (forceOpen ? ' open' : '') + (selectedDong === dong ? ' is-active-dong' : '');
-    head.innerHTML =
-      '<span class="dong-head-name">' + (selectedDong === dong ? '<span class="active-dot"></span>' : '') + escapeHtml(dong) + '</span>' +
-      '<span><span class="cnt">' + items.length + '건</span> <span class="arrow">▶</span></span>';
-
+  if(sortMode === 'distance' && myLocation){
+    // 거리순: 그룹 없이 하나의 리스트로
+    filtered.sort((a,b) => a._dist - b._dist);
     const itemsDiv = document.createElement('div');
-    itemsDiv.className = 'dong-items' + (forceOpen ? ' open' : '');
+    itemsDiv.className = 'dong-items open';
+    filtered.forEach(s => {
+      itemsDiv.appendChild(buildSiteItemEl(s, true));
+    });
+    frag.appendChild(itemsDiv);
+  }else{
+    const groups = {};
+    filtered.forEach(s => {
+      const key = s.sd || s.d || '기타';
+      if(!groups[key]) groups[key] = [];
+      groups[key].push(s);
+    });
 
-    items.forEach(s => {
-      const div = document.createElement('div');
-      div.className = 'site-item';
-      div.dataset.idx = s._idx;
-      div.innerHTML =
-        '<div class="sname">' + escapeHtml(s.n) + (s.ap ? '<span class="sflag">정확도낮음</span>' : '') + '</div>' +
-        '<div class="saddr">' + escapeHtml(s.p) + '</div>' +
-        '<div class="saddr">' + escapeHtml(s.a) + '</div>' +
-        '<div class="samount">' + formatAmount(s.m) + '</div>';
-      div.addEventListener('click', () => {
-        if(selectedDong !== (s.sd || s.d)){
-          selectedDong = s.sd || s.d;
-          applyView();
-        }
-        selectSite(s._idx, true);
+    const dongKeys = Object.keys(groups).sort((a,b) => {
+      const ia = DONG_ORDER.indexOf(a), ib = DONG_ORDER.indexOf(b);
+      return (ia<0?999:ia) - (ib<0?999:ib);
+    });
+
+    const forceOpen = !!(filterText || selectedDong || dongKeys.length === 1);
+    dongKeys.forEach(dong => {
+      const items = groups[dong];
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'dong-group';
+
+      const head = document.createElement('div');
+      head.className = 'dong-head' + (forceOpen ? ' open' : '') + (selectedDong === dong ? ' is-active-dong' : '');
+      head.innerHTML =
+        '<span class="dong-head-name">' + (selectedDong === dong ? '<span class="active-dot"></span>' : '') + escapeHtml(dong) + '</span>' +
+        '<span><span class="cnt">' + items.length + '건</span> <span class="arrow">▶</span></span>';
+
+      const itemsDiv = document.createElement('div');
+      itemsDiv.className = 'dong-items' + (forceOpen ? ' open' : '');
+
+      items.forEach(s => {
+        itemsDiv.appendChild(buildSiteItemEl(s, false));
       });
-      itemsDiv.appendChild(div);
+
+      head.addEventListener('click', () => {
+        head.classList.toggle('open');
+        itemsDiv.classList.toggle('open');
+        toggleDong(dong);
+      });
+
+      groupDiv.appendChild(head);
+      groupDiv.appendChild(itemsDiv);
+      frag.appendChild(groupDiv);
     });
+  }
 
-    head.addEventListener('click', (e) => {
-      // 헤더 클릭 시: 목록 펼치기/접기와 별개로, 동 자체를 토글선택
-      const wasOpen = itemsDiv.classList.contains('open');
-      head.classList.toggle('open');
-      itemsDiv.classList.toggle('open');
-      toggleDong(dong);
-    });
-
-    groupDiv.appendChild(head);
-    groupDiv.appendChild(itemsDiv);
-    frag.appendChild(groupDiv);
-  });
-
+  listEl.innerHTML = '';
   listEl.appendChild(frag);
+  bindSortSelect(listEl);
+}
+
+function buildSiteItemEl(s, showDongTag){
+  const div = document.createElement('div');
+  div.className = 'site-item';
+  div.dataset.idx = s._idx;
+  const distHtml = (myLocation && s._dist !== undefined)
+    ? '<div class="sdist">📍 ' + formatDistance(s._dist) + (showDongTag ? ' · ' + escapeHtml(s.sd || s.d) : '') + '</div>'
+    : '';
+  div.innerHTML =
+    '<div class="sname">' + escapeHtml(s.n) + (s.ap ? '<span class="sflag">정확도낮음</span>' : '') + '</div>' +
+    '<div class="saddr">' + escapeHtml(s.p) + '</div>' +
+    '<div class="saddr">' + escapeHtml(s.a) + '</div>' +
+    '<div class="samount">' + formatAmount(s.m) + '</div>' +
+    distHtml;
+  div.addEventListener('click', () => {
+    if(selectedDong !== (s.sd || s.d)){
+      selectedDong = s.sd || s.d;
+      applyView();
+    }
+    selectSite(s._idx, true);
+  });
+  return div;
+}
+
+function bindSortSelect(listEl){
+  const sel = listEl.querySelector('#sort-select');
+  if(sel){
+    sel.addEventListener('change', () => {
+      sortMode = sel.value;
+      renderSideList();
+    });
+  }
 }
 
 let reviewDongFilter = '전체';
@@ -1828,6 +1980,74 @@ function attachAmountFilter(){
       applyView();
     });
   });
+}
+
+/* ===== 내 위치 ===== */
+function attachLocateButton(){
+  const btn = document.getElementById('btn-locate');
+  if(!btn) return;
+  btn.addEventListener('click', () => {
+    if(!navigator.geolocation){
+      alert('이 기기/브라우저에서는 위치 확인을 지원하지 않습니다.');
+      return;
+    }
+    btn.classList.add('loading');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        btn.classList.remove('loading');
+        btn.classList.add('active');
+        myLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        placeMyLocationMarker();
+        map.setLevel(6);
+        map.panTo(new kakao.maps.LatLng(myLocation.lat, myLocation.lng));
+        enableSortDropdown();
+        renderSideList();
+      },
+      (err) => {
+        btn.classList.remove('loading');
+        let msg = '위치를 가져오지 못했습니다.';
+        if(err.code === err.PERMISSION_DENIED){
+          msg = '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 접근을 허용해주세요.';
+        }
+        alert(msg);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+    );
+  });
+}
+
+function placeMyLocationMarker(){
+  if(myLocationMarker) myLocationMarker.setMap(null);
+  const el = document.createElement('div');
+  el.id = 'my-location-marker';
+  myLocationMarker = new kakao.maps.CustomOverlay({
+    position: new kakao.maps.LatLng(myLocation.lat, myLocation.lng),
+    content: el,
+    yAnchor: 0.5,
+    zIndex: 15
+  });
+  myLocationMarker.setMap(map);
+}
+
+function enableSortDropdown(){
+  const sel = document.getElementById('sort-select');
+  if(sel) sel.disabled = false;
+}
+
+/* 두 좌표 간 거리(m), 하버사인 공식 */
+function distanceMeters(lat1, lng1, lat2, lng2){
+  const R = 6371000;
+  const toRad = (deg) => deg * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+function formatDistance(m){
+  if(m < 1000) return Math.round(m) + 'm';
+  return (m/1000).toFixed(1) + 'km';
 }
 
 /* ===== 탭 전환 / 검색 / 전체보기 (로그인 성공 후 바인딩) ===== */
