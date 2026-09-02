@@ -897,7 +897,8 @@
       grid-template-columns:auto 1fr;
       grid-template-areas:
         "title actions"
-        "search search";
+        "search search"
+        "filter filter";
       gap:8px 10px;
     }
     header h1{font-size:14.5px;grid-area:title;align-self:center;}
@@ -924,6 +925,24 @@
       align-self:center;
       display:flex;
       gap:6px;
+    }
+    #amount-filter-wrap{
+      grid-area:filter;
+      justify-self:stretch;
+    }
+    #amount-filter-btn{
+      width:100%;
+      justify-content:center;
+      padding:8px 10px;
+      font-size:12px;
+    }
+    #amount-filter-menu{
+      position:absolute;
+      top:calc(100% + 6px);
+      left:0;
+      right:0;
+      width:auto;
+      min-width:0;
     }
 
     #main{position:relative;}
@@ -1296,6 +1315,7 @@ let myLocation = null;     // {lat, lng} 내 위치
 let myLocationMarker = null;
 let sortMode = 'default';  // 'default' | 'distance'
 let locateWatching = false;
+let isFirstApplyView = true;  // 최초 로드시엔 모바일 시트를 접힘 상태로 유지
 
 const DONG_ORDER = ['신사동','논현1동','논현2동','압구정동','청담동','삼성1동','삼성2동',
   '대치1동','대치2동','대치4동','역삼1동','역삼2동','도곡1동','도곡2동',
@@ -1351,6 +1371,7 @@ function initApp(){
 
     buildMarkers();
     buildDongPolygons();
+    selectedDong = 'ALL';  // 기본 화면: 전체 사업장 핀을 바로 보여줌
     applyView();
     attachHandlers();
     attachMobileSheet();
@@ -1573,7 +1594,7 @@ function applyView(){
     document.getElementById('stat-total').textContent = targetSites.length;
     document.getElementById('header-title').innerHTML = escapeHtml(selectedDong) + ' <span>사업장</span>';
     document.getElementById('overview-hint').style.display = 'none';
-    if(window.innerWidth <= 760){ setSheetState('sheet-half'); }
+    if(window.innerWidth <= 760){ setSheetState(isFirstApplyView ? 'sheet-collapsed' : 'sheet-half'); }
   }else if(selectedDong === 'ALL'){
     // 전체보기: 강남구 전체 756건 핀을 클러스터로 모두 표시
     const filteredIdxSet = new Set(filtered.map(s => s._idx));
@@ -1588,7 +1609,7 @@ function applyView(){
     document.getElementById('stat-total').textContent = filtered.length;
     document.getElementById('header-title').innerHTML = '강남구 <span>사업장 지도</span>';
     document.getElementById('overview-hint').style.display = 'none';
-    if(window.innerWidth <= 760){ setSheetState('sheet-half'); }
+    if(window.innerWidth <= 760){ setSheetState(isFirstApplyView ? 'sheet-collapsed' : 'sheet-half'); }
   }else{
     // 개요(폴리곤만, 핀 없음)
     if(baseBounds && !baseBounds.isEmpty()){
@@ -1597,9 +1618,10 @@ function applyView(){
     document.getElementById('stat-total').textContent = filtered.length;
     document.getElementById('header-title').innerHTML = '강남구 <span>사업장 지도</span>';
     document.getElementById('overview-hint').style.display = 'block';
-    if(window.innerWidth <= 760){ setSheetState('sheet-half'); }
+    if(window.innerWidth <= 760){ setSheetState(isFirstApplyView ? 'sheet-collapsed' : 'sheet-half'); }
   }
 
+  isFirstApplyView = false;
   renderSideList();
 }
 
@@ -1848,6 +1870,10 @@ function bindSortSelect(listEl){
   if(sel){
     sel.addEventListener('change', () => {
       sortMode = sel.value;
+      if(sortMode === 'distance' && myLocation){
+        map.setLevel(6);
+        map.panTo(new kakao.maps.LatLng(myLocation.lat, myLocation.lng));
+      }
       renderSideList();
     });
   }
@@ -2153,11 +2179,15 @@ function attachLocateButton(){
         btn.classList.remove('loading');
         btn.classList.add('active');
         myLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        sortMode = 'distance';  // 내 위치를 가져오면 자동으로 가까운순 정렬로 전환
+        if(!selectedDong){
+          selectedDong = 'ALL';  // 개요(핀 없음) 상태였다면 핀이 보이는 전체보기로 전환
+        }
+        applyView();
         placeMyLocationMarker();
         map.setLevel(6);
         map.panTo(new kakao.maps.LatLng(myLocation.lat, myLocation.lng));
         enableSortDropdown();
-        renderSideList();
       },
       (err) => {
         btn.classList.remove('loading');
