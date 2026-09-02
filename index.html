@@ -915,8 +915,7 @@
       display:flex;
       flex-direction:column;
     }
-    #side-panel.sheet-peek{height:96px;}
-    #side-panel.sheet-mid{height:46vh;}
+    #side-panel.sheet-half{height:50vh;}
     #side-panel.sheet-full{height:88vh;}
     #side-panel.dragging{transition:none;}
 
@@ -1090,8 +1089,8 @@
       <div><span class="dot" style="background:#0b3d6e;opacity:.4"></span>정확도 낮음(참고용)</div>
     </div>
   </div>
-  <div id="side-panel" class="sheet-peek">
-    <div id="mobile-sheet-handle"><span class="bar"></span><span id="mobile-sheet-label">위로 끌어서 목록 보기</span></div>
+  <div id="side-panel" class="sheet-half">
+    <div id="mobile-sheet-handle"><span class="bar"></span><span id="mobile-sheet-label">▲ 위로 끌면 크게 보여요</span></div>
     <button id="back-to-map-btn">🗺️ 지도 보기</button>
     <div id="side-list"></div>
   </div>
@@ -1318,7 +1317,7 @@ function initApp(){
       if(window.innerWidth <= 760){
         const panel = document.getElementById('side-panel');
         if(panel && panel.classList.contains('sheet-full')){
-          setSheetState('sheet-peek');
+          setSheetState('sheet-half');
         }
       }
     });
@@ -1482,8 +1481,18 @@ function applyView(){
   });
 
   const isDongSelected = selectedDong && selectedDong !== 'ALL';
+  const isAllPinsMode = selectedDong === 'ALL';
 
-  // 폴리곤 스타일 갱신
+  // 폴리곤/라벨 표시 여부: '전체보기(핀)' 모드에서는 경계선·관할구역 표시를 완전히 숨김(가시성)
+  if(isAllPinsMode){
+    Object.values(dongPolygons).forEach(polys => polys.forEach(p => p.setMap(null)));
+    Object.values(dongLabelOverlays).forEach(o => o.setMap(null));
+  }else{
+    Object.values(dongPolygons).forEach(polys => polys.forEach(p => p.setMap(map)));
+    Object.values(dongLabelOverlays).forEach(o => o.setMap(map));
+  }
+
+  // 폴리곤 스타일 갱신 (전체보기 핀 모드가 아닐 때만 의미 있음)
   Object.keys(dongPolygons).forEach(dongName => {
     const cnt = countByDong[dongName] || 0;
     const isSelected = selectedDong === dongName;
@@ -1549,7 +1558,7 @@ function applyView(){
     document.getElementById('stat-total').textContent = targetSites.length;
     document.getElementById('header-title').innerHTML = escapeHtml(selectedDong) + ' <span>사업장</span>';
     document.getElementById('overview-hint').style.display = 'none';
-    if(window.innerWidth <= 760){ setSheetState('sheet-mid'); }
+    if(window.innerWidth <= 760){ setSheetState('sheet-half'); }
   }else if(selectedDong === 'ALL'){
     // 전체보기: 강남구 전체 756건 핀을 클러스터로 모두 표시
     const filteredIdxSet = new Set(filtered.map(s => s._idx));
@@ -1564,7 +1573,7 @@ function applyView(){
     document.getElementById('stat-total').textContent = filtered.length;
     document.getElementById('header-title').innerHTML = '강남구 <span>사업장 지도</span>';
     document.getElementById('overview-hint').style.display = 'none';
-    if(window.innerWidth <= 760){ setSheetState('sheet-peek'); }
+    if(window.innerWidth <= 760){ setSheetState('sheet-half'); }
   }else{
     // 개요(폴리곤만, 핀 없음)
     if(baseBounds && !baseBounds.isEmpty()){
@@ -1573,17 +1582,16 @@ function applyView(){
     document.getElementById('stat-total').textContent = filtered.length;
     document.getElementById('header-title').innerHTML = '강남구 <span>사업장 지도</span>';
     document.getElementById('overview-hint').style.display = 'block';
-    if(window.innerWidth <= 760){ setSheetState('sheet-peek'); }
+    if(window.innerWidth <= 760){ setSheetState('sheet-half'); }
   }
 
   renderSideList();
 }
 
 /* ===== 모바일 하단 시트 인터랙션 (3단계: peek/mid/full + 드래그) ===== */
-const SHEET_STATES = ['sheet-peek', 'sheet-mid', 'sheet-full'];
+const SHEET_STATES = ['sheet-half', 'sheet-full'];
 const SHEET_LABELS = {
-  'sheet-peek': '▲ 위로 끌어서 목록 보기',
-  'sheet-mid': '▲ 목록 · 더 보려면 위로',
+  'sheet-half': '▲ 위로 끌면 크게 보여요',
   'sheet-full': '▼ 아래로 끌면 지도가 보여요'
 };
 
@@ -1606,9 +1614,9 @@ function attachMobileSheet(){
   // 손잡이 탭: peek -> mid -> full -> peek (full에서 탭하면 바로 peek로 내려가 지도를 바로 볼 수 있음)
   handle.addEventListener('click', () => {
     if(panel.classList.contains('dragging')) return;
-    const current = SHEET_STATES.find(s => panel.classList.contains(s)) || 'sheet-peek';
+    const current = SHEET_STATES.find(s => panel.classList.contains(s)) || 'sheet-half';
     if(current === 'sheet-full'){
-      setSheetState('sheet-peek');
+      setSheetState('sheet-half');
     }else{
       const idx = SHEET_STATES.indexOf(current);
       const next = SHEET_STATES[(idx + 1) % SHEET_STATES.length];
@@ -1619,7 +1627,7 @@ function attachMobileSheet(){
   // 사업장 클릭 시: 완전히 숨기지 않고 'peek' 단계로 내려서 지도가 바로 보이게
   document.getElementById('side-list').addEventListener('click', (e) => {
     if(window.innerWidth <= 760 && e.target.closest('.site-item')){
-      setSheetState('sheet-peek');
+      setSheetState('sheet-half');
     }
   });
 
@@ -1627,7 +1635,7 @@ function attachMobileSheet(){
   const backBtn = document.getElementById('back-to-map-btn');
   if(backBtn){
     backBtn.addEventListener('click', () => {
-      setSheetState('sheet-peek');
+      setSheetState('sheet-half');
     });
   }
 
@@ -1635,8 +1643,7 @@ function attachMobileSheet(){
   let startY = 0, startHeight = 0, isDragging = false;
   const vh = () => window.innerHeight;
   const heightForState = (state) => {
-    if(state === 'sheet-peek') return 96;
-    if(state === 'sheet-mid') return vh() * 0.46;
+    if(state === 'sheet-half') return vh() * 0.5;
     return vh() * 0.88;
   };
 
@@ -1661,7 +1668,7 @@ function attachMobileSheet(){
     panel.style.height = '';
 
     // 가장 가까운 상태로 스냅
-    let closest = 'sheet-peek';
+    let closest = 'sheet-half';
     let minDiff = Infinity;
     SHEET_STATES.forEach(s => {
       const diff = Math.abs(heightForState(s) - currentHeight);
@@ -2015,7 +2022,7 @@ function selectSite(idx, moveMap){
   if(moveMap){
     map.setLevel(4);
     if(window.innerWidth <= 760){
-      setSheetState('sheet-peek');
+      setSheetState('sheet-half');
       const proj = map.getProjection();
       map.setCenter(pos);
       const sheetPanel = document.getElementById('side-panel');
