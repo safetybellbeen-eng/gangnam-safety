@@ -290,6 +290,21 @@
   }
   .stat-chip b{color:#fff;}
 
+  #btn-clear-selection{
+    padding:7px 14px;
+    font-size:12.5px;
+    font-weight:700;
+    border:1.5px solid rgba(255,255,255,.35);
+    background:rgba(255,255,255,.08);
+    border-radius:20px;
+    cursor:pointer;
+    color:#fff;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  #btn-clear-selection:hover{background:rgba(255,255,255,.16);}
+  #btn-clear-selection:active{background:rgba(255,255,255,.22);}
+
   #search-box{
     flex:1;
     max-width:420px;
@@ -860,6 +875,7 @@
     }
     header h1{font-size:14.5px;grid-area:title;align-self:center;}
     .stat-chip{display:none;}
+    #btn-clear-selection{display:none;}
     #search-box{grid-area:search;max-width:none;}
     #search-input{font-size:16px;padding:9px 12px 9px 34px;} /* iOS 확대 방지 */
     #search-box::before{left:12px;}
@@ -974,6 +990,7 @@
 
   @media (min-width:761px){
     #mobile-sheet-handle{display:none !important;}
+    #back-to-map-btn{display:none !important;}
     #tab-btn-group{display:contents;}
   }
 </style>
@@ -1037,6 +1054,7 @@
     <div id="search-box">
       <input type="text" id="search-input" placeholder="사업장명, 주소, 업체명으로 검색">
     </div>
+    <button id="btn-clear-selection">전체지도보기</button>
     <div id="tab-btn-group">
       <button class="toolbar-btn active" id="btn-tab-sites">사업장</button>
       <button class="toolbar-btn" id="btn-tab-review">확인필요(<span id="review-count">-</span>)</button>
@@ -1074,6 +1092,7 @@
   </div>
   <div id="side-panel" class="sheet-peek">
     <div id="mobile-sheet-handle"><span class="bar"></span><span id="mobile-sheet-label">위로 끌어서 목록 보기</span></div>
+    <button id="back-to-map-btn">🗺️ 지도 보기</button>
     <div id="side-list"></div>
   </div>
 </div>
@@ -1435,7 +1454,7 @@ function passAmountFilter(s){
 /* ===== 동 토글(핵심) ===== */
 function toggleDong(dongName){
   if(selectedDong === dongName){
-    selectedDong = null;   // 다시 누르면 해제
+    selectedDong = null;   // 다시 누르면 해제(개요로)
   }else{
     selectedDong = dongName;
   }
@@ -1443,11 +1462,17 @@ function toggleDong(dongName){
 }
 
 function clearSelection(){
-  selectedDong = null;
+  selectedDong = null;   // 개요(폴리곤만) 화면으로
   applyView();
 }
 
-/* ===== 현재 상태(selectedDong, amountMin/Max)를 지도+목록에 반영 ===== */
+function showAllPins(){
+  selectedDong = 'ALL';  // 전체 핀 표시 모드
+  applyView();
+}
+
+/* ===== 현재 상태(selectedDong, amountMin/Max)를 지도+목록에 반영 =====
+   selectedDong: null(개요-폴리곤만) | 'ALL'(전체 핀 표시) | '동이름'(해당 동만) */
 function applyView(){
   const filtered = amountFilteredSites();
   const countByDong = {};
@@ -1456,11 +1481,13 @@ function applyView(){
     countByDong[key] = (countByDong[key] || 0) + 1;
   });
 
+  const isDongSelected = selectedDong && selectedDong !== 'ALL';
+
   // 폴리곤 스타일 갱신
   Object.keys(dongPolygons).forEach(dongName => {
     const cnt = countByDong[dongName] || 0;
     const isSelected = selectedDong === dongName;
-    const isDimmed = selectedDong && !isSelected;
+    const isDimmed = isDongSelected && !isSelected;
 
     let fillColor, fillOpacity, strokeWeight, strokeColor;
     if(isSelected){
@@ -1484,8 +1511,6 @@ function applyView(){
       poly.setOptions({ fillColor, fillOpacity, strokeWeight, strokeColor });
     });
 
-    const labelDiv = dongLabelOverlays[dongName] && dongLabelOverlays[dongName].getContent
-      ? null : null;
     const overlay = dongLabelOverlays[dongName];
     if(overlay){
       const content = overlay.getContent();
@@ -1497,13 +1522,13 @@ function applyView(){
     }
   });
 
-  // 마커(핀) 갱신: selectedDong이 있으면 그 동만, 없으면 전체 숨김(개요에서는 폴리곤만 표시)
+  // 마커(핀) 갱신
   markers.forEach(m => m.setMap(null));
   clusterer.clear();
   clusterer.setMap(null);
   if(currentInfo){ currentInfo.setMap(null); currentInfo = null; }
 
-  if(selectedDong){
+  if(isDongSelected){
     const targetSites = filtered.filter(s => (s.sd || s.d) === selectedDong);
     const targetIdxSet = new Set(targetSites.map(s => s._idx));
     const activeMarkers = markers.filter(m => targetIdxSet.has(m.__idx));
@@ -1525,7 +1550,23 @@ function applyView(){
     document.getElementById('header-title').innerHTML = escapeHtml(selectedDong) + ' <span>사업장</span>';
     document.getElementById('overview-hint').style.display = 'none';
     if(window.innerWidth <= 760){ setSheetState('sheet-mid'); }
+  }else if(selectedDong === 'ALL'){
+    // 전체보기: 강남구 전체 756건 핀을 클러스터로 모두 표시
+    const filteredIdxSet = new Set(filtered.map(s => s._idx));
+    const activeMarkers = markers.filter(m => filteredIdxSet.has(m.__idx));
+    clusterer.setMap(map);
+    activeMarkers.forEach(m => m.setMap(map));
+    clusterer.addMarkers(activeMarkers);
+
+    if(baseBounds && !baseBounds.isEmpty()){
+      map.setBounds(baseBounds, 20, 20, 20, 20);
+    }
+    document.getElementById('stat-total').textContent = filtered.length;
+    document.getElementById('header-title').innerHTML = '강남구 <span>사업장 지도</span>';
+    document.getElementById('overview-hint').style.display = 'none';
+    if(window.innerWidth <= 760){ setSheetState('sheet-peek'); }
   }else{
+    // 개요(폴리곤만, 핀 없음)
     if(baseBounds && !baseBounds.isEmpty()){
       map.setBounds(baseBounds, 20, 20, 20, 20);
     }
@@ -1553,6 +1594,8 @@ function setSheetState(state){
   panel.classList.add(state);
   const label = document.getElementById('mobile-sheet-label');
   if(label) label.textContent = SHEET_LABELS[state];
+  const backBtn = document.getElementById('back-to-map-btn');
+  if(backBtn) backBtn.classList.toggle('show', state === 'sheet-full');
 }
 
 function attachMobileSheet(){
@@ -1579,6 +1622,14 @@ function attachMobileSheet(){
       setSheetState('sheet-peek');
     }
   });
+
+  // '지도 보기' 버튼 (full 상태일 때만 노출) - 눌러서 바로 peek로
+  const backBtn = document.getElementById('back-to-map-btn');
+  if(backBtn){
+    backBtn.addEventListener('click', () => {
+      setSheetState('sheet-peek');
+    });
+  }
 
   // 드래그 제스처
   let startY = 0, startHeight = 0, isDragging = false;
@@ -1651,7 +1702,7 @@ function renderSideList(){
 
 function renderSitesList(listEl, filterText){
   let base = amountFilteredSites();
-  if(selectedDong){
+  if(selectedDong && selectedDong !== 'ALL'){
     base = base.filter(s => (s.sd || s.d) === selectedDong);
   }
   let filtered = base.filter(s => matchesFilter(s, filterText));
@@ -1663,17 +1714,22 @@ function renderSitesList(listEl, filterText){
 
   const frag = document.createDocumentFragment();
 
-  // '전체보기' 항목 - 항상 최상단에 노출, 동 헤더와 동일한 톤으로 표시되어 선택/해제 토글
+  // '전체보기' 항목 - 항상 최상단에 노출. 클릭하면 전체 756건 핀이 지도에 표시됨(다시 누르면 개요로 해제)
   const allDiv = document.createElement('div');
   allDiv.className = 'dong-group';
   const allHead = document.createElement('div');
   const totalCntForAll = amountFilteredSites().length;
-  allHead.className = 'dong-head is-all-option' + (!selectedDong ? ' is-active-dong' : '');
+  const isAllActive = selectedDong === 'ALL';
+  allHead.className = 'dong-head is-all-option' + (isAllActive ? ' is-active-dong' : '');
   allHead.innerHTML =
-    '<span class="dong-head-name">' + (!selectedDong ? '<span class="active-dot"></span>' : '') + '전체보기' + '</span>' +
+    '<span class="dong-head-name">' + (isAllActive ? '<span class="active-dot"></span>' : '') + '전체보기' + '</span>' +
     '<span><span class="cnt">' + totalCntForAll + '건</span></span>';
   allHead.addEventListener('click', () => {
-    clearSelection();
+    if(selectedDong === 'ALL'){
+      clearSelection();
+    }else{
+      showAllPins();
+    }
   });
   allDiv.appendChild(allHead);
   frag.appendChild(allDiv);
@@ -1722,7 +1778,7 @@ function renderSitesList(listEl, filterText){
       return (ia<0?999:ia) - (ib<0?999:ib);
     });
 
-    const forceOpen = !!(filterText || selectedDong || dongKeys.length === 1);
+    const forceOpen = !!(filterText || (selectedDong && selectedDong !== 'ALL') || dongKeys.length === 1);
     dongKeys.forEach(dong => {
       const items = groups[dong];
       const groupDiv = document.createElement('div');
@@ -2152,6 +2208,9 @@ function attachHandlers(){
     document.getElementById('btn-tab-sites').classList.remove('active');
     document.getElementById('search-input').value = '';
     renderSideList();
+  });
+  document.getElementById('btn-clear-selection').addEventListener('click', () => {
+    clearSelection();
   });
 
   let searchDebounce = null;
