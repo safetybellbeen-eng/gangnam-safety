@@ -942,8 +942,8 @@
       display:flex;
       flex-direction:column;
     }
+    #side-panel.sheet-collapsed{height:88px;}
     #side-panel.sheet-half{height:50vh;}
-    #side-panel.sheet-full{height:88vh;}
     #side-panel.dragging{transition:none;}
 
     #mobile-sheet-handle{
@@ -966,24 +966,6 @@
       color:var(--ink-soft);
       font-weight:600;
     }
-
-    #back-to-map-btn{
-      display:none;
-      align-items:center;
-      justify-content:center;
-      gap:6px;
-      margin:0 14px 10px;
-      padding:11px;
-      background:var(--gov-navy);
-      color:#fff;
-      border:none;
-      border-radius:10px;
-      font-size:13px;
-      font-weight:700;
-      cursor:pointer;
-      flex-shrink:0;
-    }
-    #back-to-map-btn.show{display:flex;}
 
     .site-item{padding:11px 16px 11px 20px;}
     .site-item .sname{font-size:13px;}
@@ -1016,7 +998,6 @@
 
   @media (min-width:761px){
     #mobile-sheet-handle{display:none !important;}
-    #back-to-map-btn{display:none !important;}
     #tab-btn-group{display:contents;}
   }
 </style>
@@ -1117,9 +1098,8 @@
       <div><span class="dot" style="background:#0b3d6e;opacity:.4"></span>정확도 낮음(참고용)</div>
     </div>
   </div>
-  <div id="side-panel" class="sheet-half">
-    <div id="mobile-sheet-handle"><span class="bar"></span><span id="mobile-sheet-label">▲ 위로 끌면 크게 보여요</span></div>
-    <button id="back-to-map-btn">🗺️ 지도 보기</button>
+  <div id="side-panel" class="sheet-collapsed">
+    <div id="mobile-sheet-handle"><span class="bar"></span><span id="mobile-sheet-label">▲ 위로 끌어서 목록 보기</span></div>
     <div id="side-list"></div>
   </div>
 </div>
@@ -1340,12 +1320,12 @@ function initApp(){
 
     document.getElementById('map-loading').style.display = 'none';
 
-    // 모바일에서 시트가 'full'로 열려 지도를 가리고 있을 때, 지도 영역을 탭하면 시트를 내려서 지도를 보여줌
+    // 모바일에서 목록 시트가 펼쳐져 지도를 가리고 있을 때, 지도 영역을 탭하면 시트를 접어서 지도를 보여줌
     kakao.maps.event.addListener(map, 'click', () => {
       if(window.innerWidth <= 760){
         const panel = document.getElementById('side-panel');
-        if(panel && panel.classList.contains('sheet-full')){
-          setSheetState('sheet-half');
+        if(panel && panel.classList.contains('sheet-half')){
+          setSheetState('sheet-collapsed');
         }
       }
     });
@@ -1623,11 +1603,11 @@ function applyView(){
   renderSideList();
 }
 
-/* ===== 모바일 하단 시트 인터랙션 (3단계: peek/mid/full + 드래그) ===== */
-const SHEET_STATES = ['sheet-half', 'sheet-full'];
+/* ===== 모바일 하단 시트 인터랙션 (2단계: 접힘/펼침 + 드래그) ===== */
+const SHEET_STATES = ['sheet-collapsed', 'sheet-half'];
 const SHEET_LABELS = {
-  'sheet-half': '▲ 위로 끌면 크게 보여요',
-  'sheet-full': '▼ 아래로 끌면 지도가 보여요'
+  'sheet-collapsed': '▲ 위로 끌어서 목록 보기',
+  'sheet-half': '▼ 아래로 끌어서 접기'
 };
 
 function setSheetState(state){
@@ -1637,8 +1617,6 @@ function setSheetState(state){
   panel.classList.add(state);
   const label = document.getElementById('mobile-sheet-label');
   if(label) label.textContent = SHEET_LABELS[state];
-  const backBtn = document.getElementById('back-to-map-btn');
-  if(backBtn) backBtn.classList.toggle('show', state === 'sheet-full');
 }
 
 function attachMobileSheet(){
@@ -1646,40 +1624,26 @@ function attachMobileSheet(){
   const panel = document.getElementById('side-panel');
   if(!handle) return;
 
-  // 손잡이 탭: peek -> mid -> full -> peek (full에서 탭하면 바로 peek로 내려가 지도를 바로 볼 수 있음)
+  // 손잡이 탭: 접힘 <-> 펼침 토글
   handle.addEventListener('click', () => {
     if(panel.classList.contains('dragging')) return;
-    const current = SHEET_STATES.find(s => panel.classList.contains(s)) || 'sheet-half';
-    if(current === 'sheet-full'){
-      setSheetState('sheet-half');
-    }else{
-      const idx = SHEET_STATES.indexOf(current);
-      const next = SHEET_STATES[(idx + 1) % SHEET_STATES.length];
-      setSheetState(next);
-    }
+    const current = SHEET_STATES.find(s => panel.classList.contains(s)) || 'sheet-collapsed';
+    setSheetState(current === 'sheet-collapsed' ? 'sheet-half' : 'sheet-collapsed');
   });
 
-  // 사업장 클릭 시: 완전히 숨기지 않고 'peek' 단계로 내려서 지도가 바로 보이게
+  // 사업장 클릭 시: 목록을 접어서 지도가 바로 보이게
   document.getElementById('side-list').addEventListener('click', (e) => {
     if(window.innerWidth <= 760 && e.target.closest('.site-item')){
-      setSheetState('sheet-half');
+      setSheetState('sheet-collapsed');
     }
   });
-
-  // '지도 보기' 버튼 (full 상태일 때만 노출) - 눌러서 바로 peek로
-  const backBtn = document.getElementById('back-to-map-btn');
-  if(backBtn){
-    backBtn.addEventListener('click', () => {
-      setSheetState('sheet-half');
-    });
-  }
 
   // 드래그 제스처
   let startY = 0, startHeight = 0, isDragging = false;
   const vh = () => window.innerHeight;
   const heightForState = (state) => {
-    if(state === 'sheet-half') return vh() * 0.5;
-    return vh() * 0.88;
+    if(state === 'sheet-collapsed') return 88;
+    return vh() * 0.5;
   };
 
   const onDragStart = (clientY) => {
@@ -1692,7 +1656,7 @@ function attachMobileSheet(){
     if(!isDragging) return;
     const delta = startY - clientY;
     let newHeight = startHeight + delta;
-    newHeight = Math.max(70, Math.min(vh() * 0.92, newHeight));
+    newHeight = Math.max(70, Math.min(vh() * 0.7, newHeight));
     panel.style.height = newHeight + 'px';
   };
   const onDragEnd = () => {
@@ -1703,7 +1667,7 @@ function attachMobileSheet(){
     panel.style.height = '';
 
     // 가장 가까운 상태로 스냅
-    let closest = 'sheet-half';
+    let closest = 'sheet-collapsed';
     let minDiff = Infinity;
     SHEET_STATES.forEach(s => {
       const diff = Math.abs(heightForState(s) - currentHeight);
@@ -2064,7 +2028,7 @@ function selectSite(idx, moveMap){
   if(moveMap){
     map.setLevel(4);
     if(window.innerWidth <= 760){
-      setSheetState('sheet-half');
+      setSheetState('sheet-collapsed');
       const proj = map.getProjection();
       map.setCenter(pos);
       const sheetPanel = document.getElementById('side-panel');
