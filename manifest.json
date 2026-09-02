@@ -1,0 +1,17 @@
+{
+  "name": "강남구 사업장 지도",
+  "short_name": "사업장지도",
+  "description": "강남구 안전보건 업무지원 사업장 지도",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f2f5f8",
+  "theme_color": "#0b3d6e",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" }
+  ]
+}
