@@ -183,7 +183,7 @@
     gap:10px 16px;
     margin-top:14px;
   }
-  #gate-remember-label{
+  .gate-remember-label{
     display:flex;
     align-items:center;
     gap:5px;
@@ -193,7 +193,7 @@
     cursor:pointer;
     margin:0;
   }
-  #gate-remember-label input[type="checkbox"]{
+  .gate-remember-label input[type="checkbox"]{
     width:14px;height:14px;
     accent-color:var(--gov-navy);
     cursor:pointer;
@@ -398,6 +398,17 @@
     flex-shrink:0;
     box-shadow:0 0 0 3px rgba(255,209,102,.3);
   }
+  .dong-head.is-all-option{
+    background:var(--panel);
+    border-bottom:2px solid var(--gov-navy);
+    font-weight:800;
+  }
+  .dong-head.is-all-option.is-active-dong{
+    background:var(--gov-navy);
+  }
+  .dong-head.is-all-option:not(.is-active-dong):hover{
+    background:var(--gov-blue-light);
+  }
   .dong-head .cnt{
     font-weight:600;
     color:var(--ink-soft);
@@ -485,15 +496,46 @@
   }
   .review-item .sname{font-weight:700;margin-bottom:4px;font-size:14px;}
   .review-item .saddr{color:var(--ink-soft);font-size:12.5px;line-height:1.55;margin-bottom:5px;}
-  .review-item .sreason{
-    display:inline-block;
-    font-size:11px;
+  .review-item .samount{
+    color:var(--gov-blue);
+    font-size:12.5px;
     font-weight:700;
-    padding:3px 8px;
-    border-radius:20px;
+    margin-bottom:8px;
+  }
+  .sreason-toggle{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+    padding:6px 10px;
+    border-radius:8px;
     background:var(--danger-soft);
+    transition:background .12s;
+  }
+  .sreason-toggle:hover{background:#f7dcd9;}
+  .sreason-badge{
+    font-size:11.5px;
+    font-weight:700;
     color:var(--danger);
   }
+  .sreason-arrow{
+    font-size:11px;
+    font-weight:600;
+    color:var(--danger);
+    opacity:.85;
+  }
+  .sreason-detail{
+    display:none;
+    margin-top:8px;
+    padding:10px 12px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+  .sreason-detail.open{display:block;}
 
   #empty-msg{
     padding:44px 20px;
@@ -609,35 +651,7 @@
   #sort-select:focus{border-color:var(--gov-blue);outline:none;}
   #sort-select:disabled{opacity:.5;cursor:not-allowed;}
 
-  /* ===== 목록 상단 '전체보기' 항목 ===== */
-  #list-clear-selection{
-    display:none;
-    align-items:center;
-    gap:8px;
-    padding:12px 16px;
-    background:var(--gov-blue-light);
-    border-bottom:1px solid var(--line);
-    cursor:pointer;
-    font-size:13px;
-    font-weight:700;
-    color:var(--gov-blue);
-    transition:background .12s;
-  }
-  #list-clear-selection.show{display:flex;}
-  #list-clear-selection:hover{background:#d8e8fb;}
-  #list-clear-selection::before{
-    content:'✕';
-    font-size:11px;
-    width:20px;
-    height:20px;
-    border-radius:50%;
-    background:var(--gov-blue);
-    color:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex-shrink:0;
-  }
+  /* ===== 목록 상단 '전체보기' 항목은 .dong-head.is-all-option 스타일 재사용 ===== */
 
   .site-item .sdist{
     color:var(--gov-blue);
@@ -992,21 +1006,21 @@
       <label>인증번호</label>
       <input type="password" id="gate-otp" autocomplete="off" placeholder="인증번호를 입력하세요">
       <div id="gate-remember-row">
-        <label id="gate-remember-label">
+        <label class="gate-remember-label">
           <input type="checkbox" id="gate-remember-id"> 아이디 저장
         </label>
-        <label id="gate-remember-label">
+        <label class="gate-remember-label">
           <input type="checkbox" id="gate-remember-pw"> 비밀번호 저장
         </label>
-        <label id="gate-remember-label">
-          <input type="checkbox" id="gate-auto-login"> 자동 로그인
+        <label class="gate-remember-label">
+          <input type="checkbox" id="gate-auto-login"> 자동 로그인(이 기기)
         </label>
       </div>
       <button id="gate-btn">로그인</button>
       <div id="gate-err1" class="gate-err"></div>
     </div>
 
-    <div id="gate-foot">본 시스템은 내부 업무용으로 제작되었으며, 접근 권한이 없는 경우 이용할 수 없습니다.</div>
+    <div id="gate-foot">본 시스템은 내부 업무용으로 제작되었으며, 접근 권한이 없는 경우 이용할 수 없습니다.<br>저장 옵션 선택 시 이 기기의 브라우저에만 정보가 저장되며, 공용 PC에서는 사용을 권장하지 않습니다.</div>
   </div>
 </div>
 
@@ -1280,6 +1294,16 @@ function initApp(){
 
     document.getElementById('map-loading').style.display = 'none';
 
+    // 모바일에서 시트가 'full'로 열려 지도를 가리고 있을 때, 지도 영역을 탭하면 시트를 내려서 지도를 보여줌
+    kakao.maps.event.addListener(map, 'click', () => {
+      if(window.innerWidth <= 760){
+        const panel = document.getElementById('side-panel');
+        if(panel && panel.classList.contains('sheet-full')){
+          setSheetState('sheet-peek');
+        }
+      }
+    });
+
     clusterer = new kakao.maps.MarkerClusterer({
       map: null,
       averageCenter: true,
@@ -1517,9 +1541,9 @@ function applyView(){
 /* ===== 모바일 하단 시트 인터랙션 (3단계: peek/mid/full + 드래그) ===== */
 const SHEET_STATES = ['sheet-peek', 'sheet-mid', 'sheet-full'];
 const SHEET_LABELS = {
-  'sheet-peek': '위로 끌어서 목록 보기',
-  'sheet-mid': '목록 · 더 보려면 위로',
-  'sheet-full': '아래로 끌어서 지도 보기'
+  'sheet-peek': '▲ 위로 끌어서 목록 보기',
+  'sheet-mid': '▲ 목록 · 더 보려면 위로',
+  'sheet-full': '▼ 아래로 끌면 지도가 보여요'
 };
 
 function setSheetState(state){
@@ -1536,13 +1560,17 @@ function attachMobileSheet(){
   const panel = document.getElementById('side-panel');
   if(!handle) return;
 
-  // 손잡이 탭: peek -> mid -> full -> peek 순환
+  // 손잡이 탭: peek -> mid -> full -> peek (full에서 탭하면 바로 peek로 내려가 지도를 바로 볼 수 있음)
   handle.addEventListener('click', () => {
     if(panel.classList.contains('dragging')) return;
     const current = SHEET_STATES.find(s => panel.classList.contains(s)) || 'sheet-peek';
-    const idx = SHEET_STATES.indexOf(current);
-    const next = SHEET_STATES[(idx + 1) % SHEET_STATES.length];
-    setSheetState(next);
+    if(current === 'sheet-full'){
+      setSheetState('sheet-peek');
+    }else{
+      const idx = SHEET_STATES.indexOf(current);
+      const next = SHEET_STATES[(idx + 1) % SHEET_STATES.length];
+      setSheetState(next);
+    }
   });
 
   // 사업장 클릭 시: 완전히 숨기지 않고 'peek' 단계로 내려서 지도가 바로 보이게
@@ -1635,15 +1663,20 @@ function renderSitesList(listEl, filterText){
 
   const frag = document.createDocumentFragment();
 
-  // 동이 선택되어 있을 때만 노출되는 '전체보기' 항목 (목록 최상단)
-  if(selectedDong){
-    const clearItem = document.createElement('div');
-    clearItem.id = 'list-clear-selection';
-    clearItem.className = 'show';
-    clearItem.textContent = '전체보기 (' + selectedDong + ' 선택 해제)';
-    clearItem.addEventListener('click', () => clearSelection());
-    frag.appendChild(clearItem);
-  }
+  // '전체보기' 항목 - 항상 최상단에 노출, 동 헤더와 동일한 톤으로 표시되어 선택/해제 토글
+  const allDiv = document.createElement('div');
+  allDiv.className = 'dong-group';
+  const allHead = document.createElement('div');
+  const totalCntForAll = amountFilteredSites().length;
+  allHead.className = 'dong-head is-all-option' + (!selectedDong ? ' is-active-dong' : '');
+  allHead.innerHTML =
+    '<span class="dong-head-name">' + (!selectedDong ? '<span class="active-dot"></span>' : '') + '전체보기' + '</span>' +
+    '<span><span class="cnt">' + totalCntForAll + '건</span></span>';
+  allHead.addEventListener('click', () => {
+    clearSelection();
+  });
+  allDiv.appendChild(allHead);
+  frag.appendChild(allDiv);
 
   // 정렬 드롭바 (항상 표시)
   const sortBar = document.createElement('div');
@@ -1805,14 +1838,29 @@ function renderReviewList(listEl, filterText){
     return;
   }
 
-  filtered.forEach(s => {
+  filtered.forEach((s, i) => {
     const div = document.createElement('div');
     div.className = 'review-item';
+    const reasonId = 'review-reason-' + i + '-' + Math.random().toString(36).slice(2,7);
     div.innerHTML =
       '<div class="sname">' + escapeHtml(s.n) + '</div>' +
       '<div class="saddr">' + escapeHtml(s.p) + '</div>' +
       '<div class="saddr">' + escapeHtml(s.a) + '</div>' +
-      '<div class="sreason">' + escapeHtml(s.r || '주소확인필요') + '</div>';
+      '<div class="saddr">' + escapeHtml(s.s) + ' ~ ' + escapeHtml(s.e) + '</div>' +
+      '<div class="samount">' + formatAmount(s.m) + '</div>' +
+      '<div class="sreason-toggle" data-target="' + reasonId + '">' +
+        '<span class="sreason-badge">주소확인 실패</span>' +
+        '<span class="sreason-arrow">자세히 ▾</span>' +
+      '</div>' +
+      '<div class="sreason-detail" id="' + reasonId + '">' + escapeHtml(s.r || '사유 정보 없음') + '</div>';
+
+    const toggle = div.querySelector('.sreason-toggle');
+    const detail = div.querySelector('.sreason-detail');
+    toggle.addEventListener('click', () => {
+      const isOpen = detail.classList.toggle('open');
+      toggle.querySelector('.sreason-arrow').textContent = isOpen ? '접기 ▴' : '자세히 ▾';
+    });
+
     frag.appendChild(div);
   });
 
