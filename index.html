@@ -261,6 +261,20 @@
     color:#8fa8c7;
     font-size:10.5px;
   }
+  #btn-logout{
+    padding:4px 11px;
+    font-size:11px;
+    font-weight:600;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.08);
+    border-radius:14px;
+    cursor:pointer;
+    color:#d8e6f7;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  #btn-logout:hover{background:rgba(255,255,255,.16);}
+  #btn-logout:active{background:rgba(255,255,255,.22);}
   #header-main{
     padding:10px 16px;
     display:flex;
@@ -517,6 +531,19 @@
     font-weight:700;
     margin-bottom:8px;
   }
+  .review-copy-btn{
+    width:100%;
+    padding:8px;
+    margin-bottom:8px;
+    background:#fff;
+    border:1.5px solid var(--gov-blue);
+    color:var(--gov-blue);
+    border-radius:8px;
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .review-copy-btn:active{background:var(--gov-blue-light);}
   .sreason-toggle{
     display:flex;
     align-items:center;
@@ -1045,6 +1072,7 @@
     <div class="gov-mark">GOV</div>
     <span>고용노동부 강남지청 · 산재예방감독과</span>
     <span id="header-update-date"></span>
+    <button id="btn-logout">로그아웃</button>
   </div>
   <div id="header-main">
     <span id="header-title-holder" style="display:none"></span>
@@ -1500,8 +1528,9 @@ function applyView(){
 
     let fillColor, fillOpacity, strokeWeight, strokeColor;
     if(isSelected){
+      // 선택된 동: 상세보기 중이라 핀들이 잘 보이도록 채우기는 제거하고 경계선만 남김
       fillColor = '#1866c8';
-      fillOpacity = 0.42;
+      fillOpacity = 0;
       strokeWeight = 3;
       strokeColor = '#0b3d6e';
     }else if(isDimmed){
@@ -1522,10 +1551,16 @@ function applyView(){
 
     const overlay = dongLabelOverlays[dongName];
     if(overlay){
+      if(isAllPinsMode){
+        overlay.setMap(null);
+      }else{
+        // 선택된 동의 라벨(동이름+개소수)은 숨겨서 핀/정보가 가려지지 않게 함
+        overlay.setMap(isSelected ? null : map);
+      }
       const content = overlay.getContent();
       const el = (typeof content === 'string') ? null : content;
-      if(el){
-        el.className = 'dong-overlay-label' + (isSelected ? ' is-selected' : '') + (isDimmed ? ' is-dimmed' : '');
+      if(el && !isSelected){
+        el.className = 'dong-overlay-label' + (isDimmed ? ' is-dimmed' : '');
         el.innerHTML = escapeHtml(dongName) + '<span class="cnt-num">' + cnt + '개소</span>';
       }
     }
@@ -1911,6 +1946,7 @@ function renderReviewList(listEl, filterText){
       '<div class="saddr">' + escapeHtml(s.a) + '</div>' +
       '<div class="saddr">' + escapeHtml(s.s) + ' ~ ' + escapeHtml(s.e) + '</div>' +
       '<div class="samount">' + formatAmount(s.m) + '</div>' +
+      '<button class="review-copy-btn">주소복사</button>' +
       '<div class="sreason-toggle" data-target="' + reasonId + '">' +
         '<span class="sreason-badge">주소확인 실패</span>' +
         '<span class="sreason-arrow">자세히 ▾</span>' +
@@ -1922,6 +1958,12 @@ function renderReviewList(listEl, filterText){
     toggle.addEventListener('click', () => {
       const isOpen = detail.classList.toggle('open');
       toggle.querySelector('.sreason-arrow').textContent = isOpen ? '접기 ▴' : '자세히 ▾';
+    });
+
+    const copyBtn = div.querySelector('.review-copy-btn');
+    copyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyAddress(s.a, copyBtn);
     });
 
     frag.appendChild(div);
@@ -2219,6 +2261,17 @@ function attachHandlers(){
   document.getElementById('btn-clear-selection').addEventListener('click', () => {
     clearSelection();
   });
+
+  const logoutBtn = document.getElementById('btn-logout');
+  if(logoutBtn){
+    logoutBtn.addEventListener('click', () => {
+      if(confirm('로그아웃 하시겠습니까?')){
+        try{ sessionStorage.removeItem('gnmap_session'); }catch(e){}
+        // 메모리에 남은 민감 데이터를 확실히 비우기 위해 새로고침으로 초기화
+        window.location.reload();
+      }
+    });
+  }
 
   let searchDebounce = null;
   document.getElementById('search-input').addEventListener('input', () => {
