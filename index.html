@@ -90,11 +90,14 @@
     justify-content:center;
     z-index:100;
     padding:20px;
+    padding-top:calc(90px + env(safe-area-inset-top));
+    overflow-y:auto;
   }
   #gate-agency{
     position:absolute;
     top:0; left:0; right:0;
     padding:7px 20px;
+    padding-top:calc(7px + env(safe-area-inset-top));
     text-align:center;
     background:rgba(0,0,0,.22);
     color:#c3d4ea;
@@ -104,7 +107,7 @@
   }
   #gate-topbar{
     position:absolute;
-    top:34px; left:0; right:0;
+    top:calc(34px + env(safe-area-inset-top)); left:0; right:0;
     padding:8px 20px;
     display:flex;
     align-items:center;
@@ -114,6 +117,12 @@
     font-size:11.5px;
     font-weight:600;
     letter-spacing:.2px;
+  }
+  #gate-theme-switch{
+    position:absolute;
+    right:20px;
+    top:50%;
+    transform:translateY(-50%);
   }
   #gate-topbar .gov-mark{
     width:20px;height:20px;
@@ -176,6 +185,7 @@
     font-size:14px;
     outline:none;
     background:#fbfcfd;
+    color:#1a2530;
   }
   #gate-box input:focus{border-color:var(--gov-blue);background:#fff;}
   #gate-btn{
@@ -314,7 +324,7 @@
     z-index:200;
   }
   #pending-box{
-    background:#fff;
+    background:var(--panel);
     border-radius:var(--radius-lg);
     padding:40px 32px;
     max-width:320px;
@@ -355,7 +365,7 @@
     padding:20px;
   }
   #upload-modal-box{
-    background:#fff;
+    background:var(--panel);
     border-radius:var(--radius-lg);
     padding:26px 24px;
     max-width:420px;
@@ -427,18 +437,41 @@
     margin-right:6px;
   }
   #btn-admin-users:hover{background:rgba(255,255,255,.2);}
-  #btn-theme-toggle{
-    padding:4px 10px;
-    background:rgba(255,255,255,.12);
-    color:#fff;
-    border:1px solid rgba(255,255,255,.2);
-    border-radius:6px;
-    font-size:12px;
+  .theme-switch{
+    display:inline-flex;
+    align-items:center;
     cursor:pointer;
     margin-right:6px;
-    line-height:1.4;
   }
-  #btn-theme-toggle:hover{background:rgba(255,255,255,.2);}
+  .theme-switch input{
+    position:absolute;
+    opacity:0;
+    width:0; height:0;
+  }
+  .theme-switch-track{
+    position:relative;
+    display:inline-block;
+    width:40px; height:22px;
+    background:rgba(255,255,255,.22);
+    border-radius:999px;
+    transition:background .2s;
+  }
+  .theme-switch-thumb{
+    position:absolute;
+    top:2px; left:2px;
+    width:18px; height:18px;
+    background:#fff;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    transition:transform .2s;
+  }
+  .theme-switch-thumb::before{content:'☀️';}
+  .theme-switch input:checked + .theme-switch-track{background:var(--gov-blue);}
+  .theme-switch input:checked + .theme-switch-track .theme-switch-thumb{transform:translateX(18px);}
+  .theme-switch input:checked + .theme-switch-track .theme-switch-thumb::before{content:'🌙';}
   #btn-help{
     padding:4px 10px;
     background:rgba(255,255,255,.12);
@@ -549,7 +582,7 @@
     padding:20px;
   }
   #users-modal-box{
-    background:#fff;
+    background:var(--panel);
     border-radius:var(--radius-lg);
     padding:22px 22px 18px;
     max-width:480px;
@@ -636,6 +669,7 @@
   }
   #header-top{
     padding:9px 24px;
+    padding-top:calc(9px + env(safe-area-inset-top));
     display:flex;
     align-items:center;
     gap:10px;
@@ -756,7 +790,7 @@
     position:absolute;
     top:calc(100% + 6px);
     left:0; right:0;
-    background:#fff;
+    background:var(--panel);
     border:1px solid var(--line);
     border-radius:var(--radius-md);
     box-shadow:var(--shadow-2);
@@ -774,6 +808,9 @@
   .suggest-item:hover, .suggest-item.active{background:var(--gov-blue-light);}
   .suggest-item .sg-name{font-size:12.5px; font-weight:700; color:var(--ink);}
   .suggest-item .sg-addr{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .suggest-place{display:flex; align-items:flex-start; gap:8px;}
+  .sg-place-icon{font-size:13px; margin-top:1px; flex-shrink:0;}
+  .sg-place-text{min-width:0;}
   .suggest-empty{padding:14px 11px; font-size:12px; color:var(--ink-soft); text-align:center;}
   .suggest-section-head{
     padding:8px 11px 4px;
@@ -959,7 +996,7 @@
     font-size:13px;
     font-weight:600;
     color:var(--ink);
-    background:#fff;
+    background:var(--panel);
     cursor:pointer;
   }
   .review-dong-filter select:focus{border-color:var(--gov-blue);outline:none;}
@@ -1197,7 +1234,7 @@
     font-size:12.5px;
     font-weight:600;
     color:var(--ink);
-    background:#fff;
+    background:var(--panel);
     cursor:pointer;
   }
   #sort-select:focus{border-color:var(--gov-blue);outline:none;}
@@ -1284,7 +1321,7 @@
     position:absolute;
     top:calc(100% + 6px);
     right:0;
-    background:#fff;
+    background:var(--panel);
     border:1px solid var(--line);
     border-radius:var(--radius-md);
     box-shadow:var(--shadow-2);
@@ -1357,7 +1394,7 @@
     position:absolute;
     top:calc(100% + 6px);
     right:0;
-    background:#fff;
+    background:var(--panel);
     border:1px solid var(--line);
     border-radius:var(--radius-md);
     box-shadow:var(--shadow-2);
@@ -1435,7 +1472,7 @@
   }
 
   .kakao-info{
-    background:#fff;
+    background:var(--panel);
     border-radius:12px;
     box-shadow:var(--shadow-3);
     padding:16px 18px;
@@ -1528,7 +1565,7 @@
     font-weight:700;
     border-radius:7px;
     border:1px solid var(--line);
-    background:#fff;
+    background:var(--panel);
     color:var(--ink);
     cursor:pointer;
     text-align:center;
@@ -1550,7 +1587,7 @@
   #mobile-pin-card{
     position:absolute;
     left:10px; right:10px; bottom:16px;
-    background:#fff;
+    background:var(--panel);
     border-radius:var(--radius-lg);
     box-shadow:var(--shadow-3);
     padding:14px 16px;
@@ -1569,7 +1606,34 @@
   #mobile-sheet-handle{display:none;}
 
   @media (max-width: 760px){
-    #header-top{padding:6px 12px;font-size:10px;}
+    #btn-admin-upload{display:none !important;}
+    #header-top{
+      padding:7px 12px;
+      padding-top:calc(7px + env(safe-area-inset-top));
+      font-size:10px;
+      flex-wrap:nowrap;
+      gap:6px;
+      overflow-x:auto;
+      scrollbar-width:none;
+    }
+    #header-top::-webkit-scrollbar{display:none;}
+    #header-top span:not(#header-update-date){display:none;}
+    #header-top .gov-mark{flex-shrink:0;}
+    #header-update-date{font-size:9.5px; flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    #btn-admin-upload, #btn-admin-users, #btn-help, #btn-logout{
+      padding:5px 8px !important;
+      font-size:10px !important;
+      white-space:nowrap;
+      flex-shrink:0;
+      margin-right:0 !important;
+    }
+    .theme-switch{
+      flex-shrink:0;
+      margin-right:0 !important;
+    }
+    .theme-switch-track{width:34px; height:19px;}
+    .theme-switch-thumb{width:15px; height:15px; font-size:9px;}
+    .theme-switch input:checked + .theme-switch-track .theme-switch-thumb{transform:translateX(15px);}
     #header-main{
       padding:8px 12px;
       display:grid;
@@ -1692,7 +1756,7 @@
       left:50%;
       bottom:16px;
       transform:translateX(-50%);
-      z-index:6;
+      z-index:9;
       padding:10px 22px;
       background:var(--gov-navy);
       color:#fff;
@@ -1706,7 +1770,11 @@
       align-items:center;
       gap:6px;
     }
-    #btn-list-open.hidden{display:none;}
+    #btn-list-open.is-open{
+      background:var(--panel);
+      color:var(--ink);
+      border:1px solid var(--line);
+    }
 
     .site-item{padding:11px 16px 11px 20px;}
     .site-item .sname{font-size:13px;}
@@ -1752,6 +1820,10 @@
   <div id="gate-topbar">
     <div class="gov-mark">GOV</div>
     <span>고용노동부 강남지청</span>
+    <label class="theme-switch" id="gate-theme-switch">
+      <input type="checkbox" id="gate-theme-checkbox">
+      <span class="theme-switch-track"><span class="theme-switch-thumb"></span></span>
+    </label>
   </div>
   <div id="gate-box">
     <div id="gate-emblem">
@@ -1798,7 +1870,10 @@
     <span id="header-update-date"></span>
     <button id="btn-admin-upload" style="display:none">엑셀 업로드</button>
     <button id="btn-admin-users" style="display:none">관리자 설정</button>
-    <button id="btn-theme-toggle" title="다크모드 전환">🌙</button>
+    <label class="theme-switch" title="다크모드 전환">
+      <input type="checkbox" id="theme-checkbox">
+      <span class="theme-switch-track"><span class="theme-switch-thumb"></span></span>
+    </label>
     <button id="btn-help" title="사용방법 보기">❓</button>
     <button id="btn-logout">로그아웃</button>
   </div>
@@ -2292,20 +2367,25 @@ async function loadSitesFromSupabase(){
 const THEME_KEY = 'gnmap_theme';
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme);
-  const btn = document.getElementById('btn-theme-toggle');
-  if(btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  const isDark = theme === 'dark';
+  const mainCheckbox = document.getElementById('theme-checkbox');
+  const gateCheckbox = document.getElementById('gate-theme-checkbox');
+  if(mainCheckbox) mainCheckbox.checked = isDark;
+  if(gateCheckbox) gateCheckbox.checked = isDark;
 }
 function initTheme(){
   const saved = localStorage.getItem(THEME_KEY);
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   applyTheme(saved || (prefersDark ? 'dark' : 'light'));
 }
-document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+function toggleTheme(){
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   localStorage.setItem(THEME_KEY, next);
   applyTheme(next);
-});
+}
+document.getElementById('theme-checkbox').addEventListener('change', toggleTheme);
+document.getElementById('gate-theme-checkbox').addEventListener('change', toggleTheme);
 initTheme();
 
 /* ===== 온보딩 가이드 ===== */
@@ -3276,14 +3356,23 @@ function setSheetState(state){
   if(!panel) return;
   SHEET_STATES.forEach(s => panel.classList.remove(s));
   panel.classList.add(state);
-  if(openBtn) openBtn.classList.toggle('hidden', state === 'sheet-open');
+  if(openBtn){
+    openBtn.textContent = (state === 'sheet-open') ? '✕ 닫기' : '☰ 목록보기';
+    openBtn.classList.toggle('is-open', state === 'sheet-open');
+  }
 }
 
 function attachMobileSheet(){
   const closeBtn = document.getElementById('btn-list-close');
   const openBtn = document.getElementById('btn-list-open');
 
-  if(openBtn) openBtn.addEventListener('click', () => setSheetState('sheet-open'));
+  if(openBtn){
+    openBtn.addEventListener('click', () => {
+      const panel = document.getElementById('side-panel');
+      const isOpen = panel && panel.classList.contains('sheet-open');
+      setSheetState(isOpen ? 'sheet-collapsed' : 'sheet-open');
+    });
+  }
   if(closeBtn) closeBtn.addEventListener('click', () => setSheetState('sheet-collapsed'));
 
   // 사업장 클릭 시: 목록을 닫아서 지도가 바로 보이게
@@ -4168,10 +4257,13 @@ function renderSearchSuggest(text){
 
     places.forEach(place => {
       const item = document.createElement('div');
-      item.className = 'suggest-item';
+      item.className = 'suggest-item suggest-place';
       item.innerHTML =
-        '<div class="sg-name">' + escapeHtml(place.name) + '</div>' +
-        '<div class="sg-addr">' + escapeHtml(place.address || '') + '</div>';
+        '<span class="sg-place-icon">📍</span>' +
+        '<div class="sg-place-text">' +
+          '<div class="sg-name">' + escapeHtml(place.name) + '</div>' +
+          '<div class="sg-addr">' + escapeHtml(place.address || '') + '</div>' +
+        '</div>';
       item.addEventListener('click', () => {
         suggestBox.style.display = 'none';
         recordRecentSearch(text);
