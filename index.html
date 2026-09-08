@@ -1248,8 +1248,8 @@
         <button type="button" class="gate-mode-tab active" data-mode="login">로그인</button>
         <button type="button" class="gate-mode-tab" data-mode="signup">회원가입</button>
       </div>
-      <label>이메일</label>
-      <input type="email" id="gate-email" autocomplete="username" placeholder="이메일을 입력하세요">
+      <label>아이디</label>
+      <input type="text" id="gate-email" autocomplete="username" placeholder="아이디를 입력하세요">
       <label>비밀번호</label>
       <input type="password" id="gate-pw" autocomplete="current-password" placeholder="비밀번호를 입력하세요">
       <label id="gate-name-label" style="display:none">이름(소속)</label>
@@ -1396,19 +1396,37 @@ document.querySelectorAll('.gate-mode-tab').forEach(tab => {
   });
 });
 
+/* ===== 아이디 → 내부 이메일 형식 변환 ===== */
+const ID_DOMAIN = '@gangnam.local';
+
+function idToEmail(rawId){
+  const id = rawId.trim().toLowerCase();
+  return id + ID_DOMAIN;
+}
+
+function isValidId(rawId){
+  // 영문 소문자/숫자/점/밑줄만 허용 (이메일 로컬파트로 안전하게 변환되도록)
+  return /^[a-z0-9._-]{2,30}$/i.test(rawId.trim());
+}
+
 document.getElementById('gate-btn').addEventListener('click', async () => {
-  const email = document.getElementById('gate-email').value.trim();
+  const rawId = document.getElementById('gate-email').value.trim();
   const pw = document.getElementById('gate-pw').value;
   const errBox = document.getElementById('gate-err1');
   const pendingBox = document.getElementById('gate-pending-msg');
   errBox.textContent = '';
   pendingBox.style.display = 'none';
 
-  if(!email || !pw){
-    errBox.textContent = '이메일과 비밀번호를 입력해주세요.';
+  if(!rawId || !pw){
+    errBox.textContent = '아이디와 비밀번호를 입력해주세요.';
+    return;
+  }
+  if(!isValidId(rawId)){
+    errBox.textContent = '아이디는 영문/숫자로만 입력해주세요. (2~30자)';
     return;
   }
 
+  const email = idToEmail(rawId);
   const btn = document.getElementById('gate-btn');
   btn.disabled = true;
 
@@ -1437,7 +1455,7 @@ document.getElementById('gate-btn').addEventListener('click', async () => {
     }
   }catch(e){
     errBox.textContent = e.message === 'Invalid login credentials'
-      ? '이메일 또는 비밀번호가 올바르지 않습니다.'
+      ? '아이디 또는 비밀번호가 올바르지 않습니다.'
       : (e.message || '오류가 발생했습니다.');
     btn.disabled = false;
   }
