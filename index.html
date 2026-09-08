@@ -266,6 +266,18 @@
     font-size:12.5px;
     line-height:1.5;
   }
+  #gate-forgot-link{
+    text-align:center;
+    margin-top:12px;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  #gate-forgot-trigger{
+    color:var(--gov-blue);
+    font-weight:700;
+    cursor:pointer;
+    text-decoration:underline;
+  }
 
   /* ===== 승인 대기 화면 ===== */
   #pending-screen{
@@ -457,6 +469,8 @@
   .user-row-badge.pending{background:#fff4e0; color:#a86a00;}
   .user-row-badge.approved{background:var(--gov-blue-light); color:var(--gov-blue);}
   .user-row-badge.admin{background:var(--gov-navy); color:#fff;}
+  .user-row-badge.locked{background:var(--danger-soft); color:var(--danger);}
+  .user-row-lastlogin{font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
   .user-row-actions{display:flex; gap:6px; flex-shrink:0;}
   .user-row-actions button{
     padding:7px 11px;
@@ -1275,6 +1289,14 @@
     padding-right:20px;
     color:var(--ink);
   }
+  .ci-fav-btn{
+    margin-left:8px;
+    cursor:pointer;
+    color:#d4a017;
+    font-size:16px;
+    vertical-align:-1px;
+  }
+  .sfav-mark{color:#d4a017; margin-right:4px;}
   .kakao-info .ci-row{margin:4px 0;color:var(--ink-soft);}
   .kakao-info .ci-row b{color:var(--ink);font-weight:700;margin-right:3px;}
   .kakao-info .ci-close{
@@ -1563,6 +1585,7 @@
         </label>
       </div>
       <button id="gate-btn">로그인</button>
+      <div id="gate-forgot-link" style="display:none">비밀번호를 잊으셨나요? <span id="gate-forgot-trigger">새 아이디로 재가입하기</span></div>
       <div id="gate-err1" class="gate-err"></div>
       <div id="gate-pending-msg" style="display:none">회원가입이 접수되었습니다. 관리자 승인 후 이용하실 수 있습니다.</div>
     </div>
@@ -1729,9 +1752,52 @@ document.querySelectorAll('.gate-mode-tab').forEach(tab => {
     document.getElementById('gate-name-label').style.display = gateMode === 'signup' ? 'block' : 'none';
     document.getElementById('gate-name').style.display = gateMode === 'signup' ? 'block' : 'none';
     document.getElementById('gate-btn').textContent = gateMode === 'signup' ? '회원가입' : '로그인';
+    document.getElementById('gate-forgot-link').style.display = gateMode === 'login' ? 'block' : 'none';
     document.getElementById('gate-err1').textContent = '';
     document.getElementById('gate-pending-msg').style.display = 'none';
   });
+});
+document.getElementById('gate-forgot-link').style.display = 'block';
+
+document.getElementById('gate-forgot-trigger').addEventListener('click', async () => {
+  const rawId = document.getElementById('gate-email').value.trim();
+  const errBox = document.getElementById('gate-err1');
+  errBox.textContent = '';
+
+  if(!rawId || !isValidId(rawId)){
+    errBox.textContent = '먼저 위 칸에 기존 아이디를 입력한 후 눌러주세요.';
+    return;
+  }
+
+  errBox.textContent = '사용 가능한 아이디를 확인하는 중...';
+  const baseId = rawId.toLowerCase();
+  let candidate = baseId;
+  let suffix = 1;
+  let found = null;
+
+  // baseId, baseId2, baseId3 ... 순서로 아직 가입 안 된 아이디를 찾음 (최대 20회 시도)
+  for(let i = 0; i < 20; i++){
+    const email = idToEmail(candidate);
+    const { data: exists } = await sb.rpc('gnmap_email_exists', { p_email: email });
+    if(!exists){
+      found = candidate;
+      break;
+    }
+    suffix++;
+    candidate = baseId + suffix;
+  }
+
+  if(!found){
+    errBox.textContent = '사용 가능한 아이디를 찾지 못했습니다. 관리자에게 문의해주세요.';
+    return;
+  }
+
+  document.getElementById('gate-email').value = found;
+  document.querySelector('.gate-mode-tab[data-mode="signup"]').click();
+  errBox.textContent = '';
+  const noticeBox = document.getElementById('gate-pending-msg');
+  noticeBox.style.display = 'block';
+  noticeBox.textContent = `아이디가 "${found}"(으)로 자동 지정되었습니다. 이름과 새 비밀번호를 입력하고 회원가입해주세요. 가입 후 관리자 승인 및 예전 계정 정리가 필요합니다.`;
 });
 
 /* ===== 아이디 → 내부 이메일 형식 변환 ===== */
@@ -1786,8 +1852,22 @@ document.getElementById('gate-btn').addEventListener('click', async () => {
       btn.disabled = false;
       return;
     }else{
+      // 로그인 전 잠금 상태 확인
+      const { data: lockData } = await sb.rpc('gnmap_check_lock', { p_email: email });
+      if(lockData && lockData.length && lockData[0].locked){
+        const until = new Date(lockData[0].locked_until);
+        const mins = Math.max(1, Math.ceil((until - new Date()) / 60000));
+        errBox.textContent = `로그인 실패 횟수가 초과되어 계정이 잠겼습니다. 약 ${mins}분 후 다시 시도해주세요.`;
+        btn.disabled = false;
+        return;
+      }
+
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
-      if(error) throw error;
+      if(error){
+        await sb.rpc('gnmap_record_login_failure', { p_email: email });
+        throw error;
+      }
+      await sb.rpc('gnmap_record_login_success', { p_user_id: data.user.id });
       saveAutoLoginPref(document.getElementById('gate-auto-login').checked);
       await afterLogin(data.user);
     }
@@ -1835,7 +1915,37 @@ async function enterApp(){
     document.getElementById('btn-admin-users').style.display = 'inline-block';
   }
   await loadSitesFromSupabase();
+  await loadFavorites();
   initApp();
+}
+
+/* ===== 즐겨찾기 ===== */
+let FAVORITE_SITE_IDS = new Set();
+
+async function loadFavorites(){
+  const { data, error } = await sb.from('gnmap_favorites').select('site_id');
+  if(error){ FAVORITE_SITE_IDS = new Set(); return; }
+  FAVORITE_SITE_IDS = new Set((data || []).map(r => r.site_id));
+}
+
+async function toggleFavorite(siteId, btnEl){
+  const isFav = FAVORITE_SITE_IDS.has(siteId);
+  if(isFav){
+    const { error } = await sb.from('gnmap_favorites').delete().eq('site_id', siteId);
+    if(error){ alert('즐겨찾기 처리 중 오류: ' + error.message); return; }
+    FAVORITE_SITE_IDS.delete(siteId);
+  }else{
+    const userId = CURRENT_PROFILE ? CURRENT_PROFILE.id : null;
+    const { error } = await sb.from('gnmap_favorites').insert({ site_id: siteId, user_id: userId });
+    if(error){ alert('즐겨찾기 처리 중 오류: ' + error.message); return; }
+    FAVORITE_SITE_IDS.add(siteId);
+  }
+  if(btnEl){
+    const nowFav = FAVORITE_SITE_IDS.has(siteId);
+    btnEl.textContent = nowFav ? '★' : '☆';
+    btnEl.dataset.fav = nowFav ? '1' : '0';
+  }
+  renderSideList();
 }
 
 /* ===== gnmap_sites → 지도 렌더링용 CONFIRMED/REVIEW 형식으로 변환 ===== */
@@ -1851,16 +1961,20 @@ async function loadSitesFromSupabase(){
   const review = [];
   (data || []).forEach(row => {
     const site = {
-      name: row.site_name,
-      company: row.company_name,
-      addr: row.address,
+      id: row.id,
+      n: row.site_name,
+      p: row.company_name,
+      a: row.address,
       lat: row.lat,
       lng: row.lng,
-      dong: row.dong,
+      d: row.dong || '동 확인필요',
       m: row.amount || 0,
-      period: (row.period_start && row.period_end) ? `${row.period_start} ~ ${row.period_end}` : '',
+      s: row.period_start || '',
+      e: row.period_end || '',
       acc: row.accident_report_count,
-      sup: row.supervision_count
+      sup: row.supervision_count,
+      ap: false,
+      r: (!row.address) ? '주소 정보 없음' : (!row.lat || !row.lng) ? '주소 확인 실패(좌표 변환 불가)' : ''
     };
     if(row.status === 'confirmed' && row.lat && row.lng){
       confirmed.push(site);
@@ -2213,15 +2327,30 @@ async function loadUsersList(){
       badgeHtml = '<span class="user-row-badge pending">승인대기</span>';
     }
 
+    const lastLoginText = u.last_login_at
+      ? formatDateTime(u.last_login_at)
+      : '로그인 기록 없음';
+    const isLocked = u.locked_until && new Date(u.locked_until) > new Date();
+
     row.innerHTML =
       '<div class="user-row-info">' +
         '<span class="user-row-name">' + escapeHtml(u.name || '(이름 없음)') + '</span>' +
         '<span class="user-row-email">' + escapeHtml(u.email || '') + '</span>' +
         badgeHtml +
+        (isLocked ? '<span class="user-row-badge locked">잠금됨</span>' : '') +
+        '<span class="user-row-lastlogin">마지막 로그인: ' + escapeHtml(lastLoginText) + '</span>' +
       '</div>' +
       '<div class="user-row-actions"></div>';
 
     const actionsEl = row.querySelector('.user-row-actions');
+
+    if(isLocked){
+      const unlockBtn = document.createElement('button');
+      unlockBtn.className = 'btn-approve';
+      unlockBtn.textContent = '잠금 해제';
+      unlockBtn.addEventListener('click', () => unlockUser(u.id));
+      actionsEl.appendChild(unlockBtn);
+    }
 
     if(u.role !== 'admin'){
       if(!u.approved){
@@ -2262,6 +2391,21 @@ async function updateUserApproval(userId, approved){
     return;
   }
   loadUsersList();
+}
+
+async function unlockUser(userId){
+  const { error } = await sb.from('gnmap_profiles').update({ locked_until: null, failed_login_count: 0 }).eq('id', userId);
+  if(error){
+    alert('처리 중 오류가 발생했습니다: ' + error.message);
+    return;
+  }
+  loadUsersList();
+}
+
+function formatDateTime(iso){
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 async function rejectUser(userId, name){
@@ -2913,7 +3057,7 @@ function buildSiteItemEl(s, showDongTag){
     ? '<div class="sdist">📍 ' + formatDistance(s._dist) + (showDongTag ? ' · ' + escapeHtml(s.sd || s.d) : '') + '</div>'
     : '';
   div.innerHTML =
-    '<div class="sname">' + escapeHtml(s.n) + (s.ap ? '<span class="sflag">정확도낮음</span>' : '') + '</div>' +
+    '<div class="sname">' + (FAVORITE_SITE_IDS.has(s.id) ? '<span class="sfav-mark">★</span>' : '') + escapeHtml(s.n) + (s.ap ? '<span class="sflag">정확도낮음</span>' : '') + '</div>' +
     '<div class="saddr">' + escapeHtml(s.p) + '</div>' +
     '<div class="saddr">' + escapeHtml(s.a) + '</div>' +
     '<div class="samount">' + formatAmount(s.m) + '</div>' +
@@ -3082,7 +3226,7 @@ function selectSite(idx, moveMap){
 
   const infoHtml =
     '<div class="ci-close" id="ci-close-btn">&times;</div>' +
-    '<div class="ci-name">' + escapeHtml(s.n) + '</div>' +
+    '<div class="ci-name">' + escapeHtml(s.n) + '<span class="ci-fav-btn" id="ci-fav-btn" data-fav="' + (FAVORITE_SITE_IDS.has(s.id) ? '1' : '0') + '">' + (FAVORITE_SITE_IDS.has(s.id) ? '★' : '☆') + '</span></div>' +
     '<div class="ci-row"><b>업체</b> ' + escapeHtml(s.p) + '</div>' +
     '<div class="ci-row"><b>주소</b> ' + escapeHtml(s.a) + '</div>' +
     '<div class="ci-row"><b>공사기간</b> ' + escapeHtml(s.s) + ' ~ ' + escapeHtml(s.e) + '</div>' +
@@ -3128,6 +3272,10 @@ function selectSite(idx, moveMap){
   content.querySelector('#ci-copy-btn').addEventListener('click', (e) => {
     shareSite(s, e.target.closest('button'));
   });
+  const favBtn = content.querySelector('#ci-fav-btn');
+  if(favBtn){
+    favBtn.addEventListener('click', () => toggleFavorite(s.id, favBtn));
+  }
 
   if(moveMap){
     map.setLevel(4);
