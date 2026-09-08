@@ -1,9 +1,12 @@
-const CACHE_NAME = 'gangnam-site-map-v1';
+const CACHE_NAME = 'gangnam-site-map-v3';
 const APP_SHELL = [
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './icon-192-maskable.png',
+  './icon-512-maskable.png',
+  './icon-180.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -24,8 +27,9 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
-  // 카카오맵 API 등 외부 요청은 캐시하지 않고 네트워크 그대로 통과
-  if (url.includes('dapi.kakao.com') || url.includes('kakao')) {
+  // 카카오맵 API, Supabase, CDN 라이브러리 등 외부 요청은 캐시하지 않고 네트워크 그대로 통과
+  if (url.includes('dapi.kakao.com') || url.includes('kakao') ||
+      url.includes('supabase.co') || url.includes('jsdelivr.net')) {
     return;
   }
   event.respondWith(
