@@ -371,6 +371,105 @@
   #btn-upload-start{background:var(--gov-navy); color:#fff;}
   #btn-upload-start:disabled{opacity:.45; cursor:default;}
 
+  /* ===== 관리자 회원 관리 모달 ===== */
+  #btn-admin-users{
+    padding:4px 11px;
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:6px;
+    font-size:11px;
+    font-weight:600;
+    cursor:pointer;
+    margin-right:6px;
+  }
+  #btn-admin-users:hover{background:rgba(255,255,255,.2);}
+  #users-modal{
+    position:fixed; inset:0;
+    background:rgba(11,25,43,.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:300;
+    padding:20px;
+  }
+  #users-modal-box{
+    background:#fff;
+    border-radius:14px;
+    padding:22px 22px 18px;
+    max-width:480px;
+    width:100%;
+    max-height:80vh;
+    display:flex;
+    flex-direction:column;
+  }
+  #users-modal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+    flex-shrink:0;
+  }
+  #users-modal-head h3{font-size:16px; color:var(--gov-navy);}
+  #btn-users-cancel{
+    padding:6px 14px;
+    background:var(--gov-blue-light);
+    color:var(--ink);
+    border:none;
+    border-radius:7px;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  #users-list{
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .user-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:11px 13px;
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+  .user-row-info{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .user-row-name{font-size:13.5px; font-weight:700; color:var(--ink);}
+  .user-row-email{font-size:11.5px; color:var(--ink-soft); word-break:break-all;}
+  .user-row-badge{
+    display:inline-block;
+    margin-top:2px;
+    padding:2px 8px;
+    border-radius:999px;
+    font-size:10.5px;
+    font-weight:700;
+    width:fit-content;
+  }
+  .user-row-badge.pending{background:#fff4e0; color:#a86a00;}
+  .user-row-badge.approved{background:var(--gov-blue-light); color:var(--gov-blue);}
+  .user-row-badge.admin{background:var(--gov-navy); color:#fff;}
+  .user-row-actions{display:flex; gap:6px; flex-shrink:0;}
+  .user-row-actions button{
+    padding:7px 11px;
+    border:none;
+    border-radius:7px;
+    font-size:11.5px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .btn-approve{background:var(--gov-navy); color:#fff;}
+  .btn-revoke{background:#f4f5f7; color:#b23b3b;}
+  #users-empty-msg{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:12.5px;
+    padding:24px 0;
+  }
+
   /* ===== 상단바 ===== */
   header{
     background:var(--gov-navy);
@@ -768,41 +867,6 @@
   .legend div{display:flex;align-items:center;gap:6px;margin:3px 0;}
   .legend .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 
-  /* ===== 동별 빠른 선택 하단 탭(네이버 지도 스타일) ===== */
-  #dong-quick-tabs{
-    position:absolute;
-    left:0; right:0; bottom:0;
-    display:flex;
-    gap:6px;
-    overflow-x:auto;
-    padding:9px 12px;
-    background:linear-gradient(0deg, rgba(255,255,255,.97) 70%, rgba(255,255,255,0));
-    z-index:4;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-  }
-  #dong-quick-tabs::-webkit-scrollbar{display:none;}
-  .dong-tab-chip{
-    flex-shrink:0;
-    padding:7px 13px;
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:999px;
-    font-size:12.5px;
-    font-weight:600;
-    color:var(--ink);
-    cursor:pointer;
-    white-space:nowrap;
-    box-shadow:0 2px 8px rgba(11,61,110,.08);
-    transition:background .12s, color .12s, border-color .12s;
-  }
-  .dong-tab-chip:hover{background:var(--gov-blue-light);}
-  .dong-tab-chip.active{
-    background:var(--gov-blue);
-    border-color:var(--gov-blue);
-    color:#fff;
-  }
-
   /* ===== 내 위치 버튼 ===== */
   #btn-locate{
     position:absolute;
@@ -995,6 +1059,52 @@
   }
   #amount-filter-apply:hover{opacity:.9;}
 
+  /* ===== 동 선택 필터 (공사금액 필터와 동일한 UI 패턴 재사용) ===== */
+  #dong-filter-wrap{
+    position:relative;
+    flex-shrink:0;
+  }
+  #dong-filter-btn{
+    padding:7px 13px;
+    font-size:12px;
+    font-weight:600;
+    border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.06);
+    border-radius:20px;
+    cursor:pointer;
+    color:#d8e6f7;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  #dong-filter-btn.active{
+    background:#fff;
+    color:var(--gov-navy);
+    border-color:#fff;
+  }
+  #dong-filter-btn .caret{font-size:9px;}
+  #dong-filter-menu{
+    display:none;
+    position:absolute;
+    top:calc(100% + 6px);
+    right:0;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:0 6px 20px rgba(11,61,110,.18);
+    padding:6px;
+    z-index:30;
+    min-width:170px;
+    max-height:320px;
+    overflow-y:auto;
+  }
+  #dong-filter-menu.open{display:block;}
+  #dong-filter-list{
+    max-height:220px;
+    overflow-y:auto;
+  }
+
   /* ===== 개요/상세 화면 전환 ===== */
   #overview-hint{
     position:absolute;
@@ -1095,7 +1205,7 @@
       grid-template-areas:
         "title actions"
         "search search"
-        "filter filter";
+        "filter1 filter2";
       gap:8px 10px;
     }
     header h1{font-size:14.5px;grid-area:title;align-self:center;}
@@ -1124,8 +1234,18 @@
       gap:6px;
     }
     #amount-filter-wrap{
-      grid-area:filter;
+      grid-area:filter1;
       justify-self:stretch;
+    }
+    #dong-filter-wrap{
+      grid-area:filter2;
+      justify-self:stretch;
+    }
+    #dong-filter-btn{
+      width:100%;
+      justify-content:center;
+      padding:8px 10px;
+      font-size:12px;
     }
     #amount-filter-btn{
       width:100%;
@@ -1134,6 +1254,14 @@
       font-size:12px;
     }
     #amount-filter-menu{
+      position:absolute;
+      top:calc(100% + 6px);
+      left:0;
+      right:0;
+      width:auto;
+      min-width:0;
+    }
+    #dong-filter-menu{
       position:absolute;
       top:calc(100% + 6px);
       left:0;
@@ -1226,11 +1354,6 @@
       padding:8px 11px;
       font-size:10.5px;
     }
-    #dong-quick-tabs{
-      bottom:0;
-      padding:8px 10px;
-    }
-    .dong-tab-chip{padding:6px 11px; font-size:12px;}
     #btn-locate{
       right:12px;
       bottom:76px;
@@ -1282,7 +1405,7 @@
       <input type="text" id="gate-name" style="display:none" autocomplete="off" placeholder="예: 강남지청 홍길동">
       <div id="gate-remember-row">
         <label class="gate-remember-label">
-          <input type="checkbox" id="gate-auto-login" checked> 자동 로그인(이 기기)
+          <input type="checkbox" id="gate-auto-login" checked> 자동 로그인
         </label>
       </div>
       <button id="gate-btn">로그인</button>
@@ -1300,6 +1423,7 @@
     <span>고용노동부 강남지청 · 산재예방감독과</span>
     <span id="header-update-date"></span>
     <button id="btn-admin-upload" style="display:none">엑셀 업로드</button>
+    <button id="btn-admin-users" style="display:none">관리자 설정</button>
     <button id="btn-logout">로그아웃</button>
   </div>
   <div id="header-main">
@@ -1330,6 +1454,17 @@
         </div>
       </div>
     </div>
+    <div id="dong-filter-wrap">
+      <button id="dong-filter-btn"><span id="dong-filter-label">동 선택</span> <span class="caret">▼</span></button>
+      <div id="dong-filter-menu">
+        <div class="amount-opt all-opt selected" data-dong="ALL">전체</div>
+        <div class="amount-opt-sep"></div>
+        <div id="dong-filter-list"></div>
+        <div class="amount-opt-apply-row">
+          <button id="dong-filter-apply">적용</button>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -1348,7 +1483,6 @@
       <div><span class="dot" style="background:#0b3d6e"></span>사업장 위치</div>
       <div><span class="dot" style="background:#0b3d6e;opacity:.4"></span>정확도 낮음(참고용)</div>
     </div>
-    <div id="dong-quick-tabs"></div>
     <button id="btn-list-open">☰ 목록보기</button>
   </div>
   <div id="side-panel" class="sheet-collapsed">
@@ -1387,6 +1521,17 @@
   </div>
 </div>
 
+<!-- 관리자 회원 관리 모달 -->
+<div id="users-modal" style="display:none">
+  <div id="users-modal-box">
+    <div id="users-modal-head">
+      <h3>관리자 설정 · 회원 관리</h3>
+      <button id="btn-users-cancel">닫기</button>
+    </div>
+    <div id="users-list"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -1400,7 +1545,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const KAKAO_REST_KEY = "edeab0e071a237e4239eab9178cfc949";
 
-/* ===== 아이디/비밀번호 저장 & 자동 로그인(이 기기) ===== */
+/* ===== 아이디/비밀번호 저장 & 자동 로그인 ===== */
 const AUTO_LOGIN_KEY = 'gnmap_auto_login';
 
 function saveAutoLoginPref(autoLogin){
@@ -1472,7 +1617,7 @@ document.getElementById('gate-btn').addEventListener('click', async () => {
       if(error) throw error;
       // 프로필 생성 (기본 role=viewer, approved=false)
       if(data.user){
-        await sb.from('gnmap_profiles').insert({ id: data.user.id, name });
+        await sb.from('gnmap_profiles').insert({ id: data.user.id, name, email });
       }
       pendingBox.style.display = 'block';
       btn.disabled = false;
@@ -1524,6 +1669,7 @@ async function enterApp(){
   document.getElementById('main').style.display = 'flex';
   if(CURRENT_PROFILE && CURRENT_PROFILE.role === 'admin'){
     document.getElementById('btn-admin-upload').style.display = 'inline-block';
+    document.getElementById('btn-admin-users').style.display = 'inline-block';
   }
   await loadSitesFromSupabase();
   initApp();
@@ -1568,7 +1714,7 @@ async function loadSitesFromSupabase(){
   }
 }
 
-/* ===== 자동 로그인(이 기기) — Supabase 세션은 자체적으로 localStorage에 유지됨 ===== */
+/* ===== 자동 로그인 — Supabase 세션은 자체적으로 localStorage에 유지됨 ===== */
 window.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await sb.auth.getSession();
   if(session && session.user){
@@ -1844,6 +1990,101 @@ async function geocodeAddress(address){
   };
 }
 
+/* ============================================================
+   관리자 회원 관리
+   ============================================================ */
+document.getElementById('btn-admin-users').addEventListener('click', () => {
+  document.getElementById('users-modal').style.display = 'flex';
+  loadUsersList();
+});
+
+document.getElementById('btn-users-cancel').addEventListener('click', () => {
+  document.getElementById('users-modal').style.display = 'none';
+});
+
+async function loadUsersList(){
+  const listEl = document.getElementById('users-list');
+  listEl.innerHTML = '<div id="users-empty-msg">불러오는 중...</div>';
+
+  const { data, error } = await sb.from('gnmap_profiles').select('*').order('created_at', { ascending: false });
+  if(error){
+    listEl.innerHTML = '<div id="users-empty-msg">목록을 불러오지 못했습니다: ' + escapeHtml(error.message) + '</div>';
+    return;
+  }
+  if(!data || !data.length){
+    listEl.innerHTML = '<div id="users-empty-msg">가입된 회원이 없습니다.</div>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+  data.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'user-row';
+
+    let badgeHtml = '';
+    if(u.role === 'admin'){
+      badgeHtml = '<span class="user-row-badge admin">관리자</span>';
+    }else if(u.approved){
+      badgeHtml = '<span class="user-row-badge approved">승인됨</span>';
+    }else{
+      badgeHtml = '<span class="user-row-badge pending">승인대기</span>';
+    }
+
+    row.innerHTML =
+      '<div class="user-row-info">' +
+        '<span class="user-row-name">' + escapeHtml(u.name || '(이름 없음)') + '</span>' +
+        '<span class="user-row-email">' + escapeHtml(u.email || '') + '</span>' +
+        badgeHtml +
+      '</div>' +
+      '<div class="user-row-actions"></div>';
+
+    const actionsEl = row.querySelector('.user-row-actions');
+
+    if(u.role !== 'admin'){
+      if(!u.approved){
+        const approveBtn = document.createElement('button');
+        approveBtn.className = 'btn-approve';
+        approveBtn.textContent = '승인';
+        approveBtn.addEventListener('click', () => updateUserApproval(u.id, true));
+        actionsEl.appendChild(approveBtn);
+
+        const rejectBtn = document.createElement('button');
+        rejectBtn.className = 'btn-revoke';
+        rejectBtn.textContent = '거부';
+        rejectBtn.addEventListener('click', () => rejectUser(u.id, u.name));
+        actionsEl.appendChild(rejectBtn);
+      }else{
+        const revokeBtn = document.createElement('button');
+        revokeBtn.className = 'btn-revoke';
+        revokeBtn.textContent = '승인취소';
+        revokeBtn.addEventListener('click', () => updateUserApproval(u.id, false));
+        actionsEl.appendChild(revokeBtn);
+      }
+    }
+
+    listEl.appendChild(row);
+  });
+}
+
+async function updateUserApproval(userId, approved){
+  const { error } = await sb.from('gnmap_profiles').update({ approved }).eq('id', userId);
+  if(error){
+    alert('처리 중 오류가 발생했습니다: ' + error.message);
+    return;
+  }
+  loadUsersList();
+}
+
+async function rejectUser(userId, name){
+  if(!confirm((name || '이 사용자') + '의 가입 신청을 거부(삭제)하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  const { error } = await sb.from('gnmap_profiles').delete().eq('id', userId);
+  if(error){
+    alert('처리 중 오류가 발생했습니다: ' + error.message);
+    return;
+  }
+  loadUsersList();
+}
+
 /* Service Worker 등록 (PWA) */
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
@@ -1863,7 +2104,7 @@ let dongBounds = {};     // dongName -> kakao.maps.LatLngBounds (해당 동 경�
 let currentInfo = null;
 let activeTab = 'sites';
 let CONFIRMED, REVIEW;
-let selectedDong = null;   // 토글 선택된 행정동 (null = 전체보기)
+let selectedDongs = new Set();   // 다중선택된 행정동 필터 (비어있으면 전체)
 // 다중선택 금액 구간: 빈 Set = 전체(필터 없음). 각 원소는 {min,max} 구간의 key
 const AMOUNT_RANGES = {
   A: {min:0, max:500000000},
@@ -1935,13 +2176,12 @@ function initApp(){
 
     buildMarkers();
     buildDongPolygons();
-    selectedDong = 'ALL';  // 기본 화면: 전체 사업장 핀을 바로 보여줌
     applyView();
     attachHandlers();
     attachMobileSheet();
     attachAmountFilter();
+    attachDongFilter();
     attachLocateButton();
-    buildDongQuickTabs();
   });
 }
 
@@ -1983,9 +2223,6 @@ function buildDongPolygons(){
         fillColor: '#9aa7b4',
         fillOpacity: 0.08
       });
-      kakao.maps.event.addListener(polygon, 'click', () => {
-        toggleDong(dongName);
-      });
       dongPolygons[dongName].push(polygon);
       path.forEach(p => { bounds.extend(p); thisDongBounds.extend(p); });
     });
@@ -1997,7 +2234,6 @@ function buildDongPolygons(){
       const labelDiv = document.createElement('div');
       labelDiv.className = 'dong-overlay-label';
       labelDiv.dataset.dong = dongName;
-      labelDiv.addEventListener('click', () => toggleDong(dongName));
 
       const overlay = new kakao.maps.CustomOverlay({
         position: center,
@@ -2037,6 +2273,12 @@ function amountFilteredSites(){
     .map((s, idx) => ({...s, _idx: idx}))
     .filter(s => passAmountFilter(s));
 }
+function dongAndAmountFilteredSites(){
+  return amountFilteredSites().filter(s => {
+    if(selectedDongs.size === 0) return true;
+    return selectedDongs.has(s.sd || s.d);
+  });
+}
 function passAmountFilter(s){
   if(selectedAmountKeys.size === 0) return true;   // 전체(구간 미선택)
   const amt = Number(s.m) || 0;
@@ -2048,99 +2290,122 @@ function passAmountFilter(s){
   return false;
 }
 
-/* ===== 동 토글(핵심) ===== */
-function toggleDong(dongName){
-  if(selectedDong === dongName){
-    selectedDong = null;   // 다시 누르면 해제(개요로)
-  }else{
-    selectedDong = dongName;
-  }
-  applyView();
-  updateDongQuickTabsActive();
-}
-
+/* ===== 동 선택 필터(다중선택 드롭다운) ===== */
 function clearSelection(){
-  selectedDong = null;   // 개요(폴리곤만) 화면으로
+  selectedDongs.clear();
   applyView();
-  updateDongQuickTabsActive();
+  syncDongFilterUI();
 }
 
 function showAllPins(){
-  selectedDong = 'ALL';  // 전체 핀 표시 모드
+  selectedDongs.clear();
   applyView();
-  updateDongQuickTabsActive();
+  syncDongFilterUI();
 }
 
-/* ===== 동별 빠른 선택 하단 탭(네이버 지도 스타일) ===== */
-function buildDongQuickTabs(){
-  const wrap = document.getElementById('dong-quick-tabs');
-  if(!wrap) return;
-  wrap.innerHTML = '';
-
-  const allChip = document.createElement('div');
-  allChip.className = 'dong-tab-chip';
-  allChip.dataset.dong = 'ALL';
-  allChip.textContent = '전체';
-  allChip.addEventListener('click', () => showAllPins());
-  wrap.appendChild(allChip);
-
+function buildDongFilterList(){
+  const listEl = document.getElementById('dong-filter-list');
+  if(!listEl) return;
+  listEl.innerHTML = '';
   DONG_ORDER.forEach(dongName => {
-    const chip = document.createElement('div');
-    chip.className = 'dong-tab-chip';
-    chip.dataset.dong = dongName;
-    chip.textContent = dongName;
-    chip.addEventListener('click', () => {
-      toggleDong(dongName);
-      // 선택된 칩이 보이도록 스크롤
-      chip.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+    const opt = document.createElement('div');
+    opt.className = 'amount-opt';
+    opt.dataset.dong = dongName;
+    opt.textContent = dongName;
+    listEl.appendChild(opt);
+  });
+}
+
+function updateDongFilterLabel(){
+  const btn = document.getElementById('dong-filter-btn');
+  const label = document.getElementById('dong-filter-label');
+  const n = selectedDongs.size;
+  if(n === 0){
+    label.textContent = '동 선택';
+    btn.classList.remove('active');
+  }else if(n === 1){
+    label.textContent = [...selectedDongs][0];
+    btn.classList.add('active');
+  }else{
+    label.textContent = `동 ${n}개 선택`;
+    btn.classList.add('active');
+  }
+}
+
+/* 드롭다운 안의 체크 표시만 갱신 (지도/목록은 건드리지 않음, 적용 버튼을 눌러야 반영) */
+function syncDongFilterUI(){
+  const menu = document.getElementById('dong-filter-menu');
+  if(!menu) return;
+  const allOpt = menu.querySelector('.amount-opt.all-opt');
+  menu.querySelectorAll('.amount-opt[data-dong]').forEach(opt => {
+    opt.classList.toggle('selected', selectedDongs.has(opt.dataset.dong));
+  });
+  if(allOpt) allOpt.classList.toggle('selected', selectedDongs.size === 0);
+  updateDongFilterLabel();
+}
+
+function attachDongFilter(){
+  buildDongFilterList();
+
+  const btn = document.getElementById('dong-filter-btn');
+  const menu = document.getElementById('dong-filter-menu');
+  const applyBtn = document.getElementById('dong-filter-apply');
+  const allOpt = menu.querySelector('.amount-opt.all-opt');
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+  document.addEventListener('click', () => {
+    menu.classList.remove('open');
+  });
+  menu.addEventListener('click', (e) => e.stopPropagation());
+
+  allOpt.addEventListener('click', () => {
+    selectedDongs.clear();
+    syncDongFilterUI();
+  });
+
+  menu.querySelectorAll('.amount-opt[data-dong]').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const dongName = opt.dataset.dong;
+      if(selectedDongs.has(dongName)){
+        selectedDongs.delete(dongName);
+      }else{
+        selectedDongs.add(dongName);
+      }
+      syncDongFilterUI();
     });
-    wrap.appendChild(chip);
   });
 
-  updateDongQuickTabsActive();
-}
-
-function updateDongQuickTabsActive(){
-  const wrap = document.getElementById('dong-quick-tabs');
-  if(!wrap) return;
-  wrap.querySelectorAll('.dong-tab-chip').forEach(chip => {
-    chip.classList.toggle('active', chip.dataset.dong === selectedDong);
+  applyBtn.addEventListener('click', () => {
+    updateDongFilterLabel();
+    menu.classList.remove('open');
+    applyView();
   });
 }
 
-/* ===== 현재 상태(selectedDong, amountMin/Max)를 지도+목록에 반영 =====
-   selectedDong: null(개요-폴리곤만) | 'ALL'(전체 핀 표시) | '동이름'(해당 동만) */
+/* ===== 현재 상태(selectedDongs, amountFilteredSites)를 지도+목록에 반영 =====
+   selectedDongs: Set() 비어있으면 전체, 비어있지 않으면 그 동들만 */
 function applyView(){
-  const filtered = amountFilteredSites();
+  const filtered = dongAndAmountFilteredSites();
   const countByDong = {};
-  filtered.forEach(s => {
+  amountFilteredSites().forEach(s => {
     const key = s.sd || s.d;
     countByDong[key] = (countByDong[key] || 0) + 1;
   });
 
-  const isDongSelected = selectedDong && selectedDong !== 'ALL';
-  const isAllPinsMode = selectedDong === 'ALL';
-
-  // 폴리곤/라벨 표시 여부: '전체보기(핀)' 모드에서는 경계선·관할구역 표시를 완전히 숨김(가시성)
-  if(isAllPinsMode){
-    Object.values(dongPolygons).forEach(polys => polys.forEach(p => p.setMap(null)));
-    Object.values(dongLabelOverlays).forEach(o => o.setMap(null));
-  }else{
-    Object.values(dongPolygons).forEach(polys => polys.forEach(p => p.setMap(map)));
-    Object.values(dongLabelOverlays).forEach(o => o.setMap(map));
-  }
-
-  // 폴리곤 스타일 갱신 (전체보기 핀 모드가 아닐 때만 의미 있음)
+  // 폴리곤/라벨: 항상 배경으로 표시. 선택된 동이 있으면 선택 안 된 동은 흐리게
+  const hasDongFilter = selectedDongs.size > 0;
   Object.keys(dongPolygons).forEach(dongName => {
     const cnt = countByDong[dongName] || 0;
-    const isSelected = selectedDong === dongName;
-    const isDimmed = isDongSelected && !isSelected;
+    const isSelected = selectedDongs.has(dongName);
+    const isDimmed = hasDongFilter && !isSelected;
 
     let fillColor, fillOpacity, strokeWeight, strokeColor;
     if(isSelected){
-      // 선택된 동: 상세보기 중이라 핀들이 잘 보이도록 채우기는 제거하고 경계선만 남김
       fillColor = '#1866c8';
-      fillOpacity = 0;
+      fillOpacity = Math.min(0.14 + cnt/110, 0.5);
       strokeWeight = 3;
       strokeColor = '#0b3d6e';
     }else if(isDimmed){
@@ -2156,20 +2421,16 @@ function applyView(){
     }
 
     dongPolygons[dongName].forEach(poly => {
+      poly.setMap(map);
       poly.setOptions({ fillColor, fillOpacity, strokeWeight, strokeColor });
     });
 
     const overlay = dongLabelOverlays[dongName];
     if(overlay){
-      if(isAllPinsMode){
-        overlay.setMap(null);
-      }else{
-        // 선택된 동의 라벨(동이름+개소수)은 숨겨서 핀/정보가 가려지지 않게 함
-        overlay.setMap(isSelected ? null : map);
-      }
+      overlay.setMap(map);
       const content = overlay.getContent();
       const el = (typeof content === 'string') ? null : content;
-      if(el && !isSelected){
+      if(el){
         el.className = 'dong-overlay-label' + (isDimmed ? ' is-dimmed' : '');
         el.innerHTML = escapeHtml(dongName) + '<span class="cnt-num">' + cnt + '개소</span>';
       }
@@ -2182,53 +2443,27 @@ function applyView(){
   clusterer.setMap(null);
   if(currentInfo){ currentInfo.setMap(null); currentInfo = null; }
 
-  if(isDongSelected){
-    const targetSites = filtered.filter(s => (s.sd || s.d) === selectedDong);
-    const targetIdxSet = new Set(targetSites.map(s => s._idx));
-    const activeMarkers = markers.filter(m => targetIdxSet.has(m.__idx));
-    clusterer.setMap(map);
-    activeMarkers.forEach(m => m.setMap(map));
-    clusterer.addMarkers(activeMarkers);
+  const filteredIdxSet = new Set(filtered.map(s => s._idx));
+  const activeMarkers = markers.filter(m => filteredIdxSet.has(m.__idx));
+  clusterer.setMap(map);
+  activeMarkers.forEach(m => m.setMap(map));
+  clusterer.addMarkers(activeMarkers);
 
-    if(dongBounds[selectedDong] && !dongBounds[selectedDong].isEmpty()){
-      // 사업장 위치가 아니라 '동 경계 전체'를 기준으로 맞춰서, 항상 그 동의 정중앙이 화면 중심이 되게 함
-      const combined = new kakao.maps.LatLngBounds(
-        dongBounds[selectedDong].getSouthWest(),
-        dongBounds[selectedDong].getNorthEast()
-      );
-      // 동 경계 밖에 있는 사업장(경계 오차 등)이 있으면 화면에서 잘리지 않도록 포함시킴
-      activeMarkers.forEach(m => combined.extend(m.getPosition()));
-      map.setBounds(combined, 30, 30, 30, 30);
-    }
-    document.getElementById('stat-total').textContent = targetSites.length;
-    document.getElementById('header-title').innerHTML = escapeHtml(selectedDong) + ' <span>사업장</span>';
-    document.getElementById('overview-hint').style.display = 'none';
-    
-  }else if(selectedDong === 'ALL'){
-    // 전체보기: 강남구 전체 756건 핀을 클러스터로 모두 표시
-    const filteredIdxSet = new Set(filtered.map(s => s._idx));
-    const activeMarkers = markers.filter(m => filteredIdxSet.has(m.__idx));
-    clusterer.setMap(map);
-    activeMarkers.forEach(m => m.setMap(map));
-    clusterer.addMarkers(activeMarkers);
-
-    if(baseBounds && !baseBounds.isEmpty()){
-      map.setBounds(baseBounds, 20, 20, 20, 20);
-    }
-    document.getElementById('stat-total').textContent = filtered.length;
-    document.getElementById('header-title').innerHTML = '강남구 <span>사업장 지도</span>';
-    document.getElementById('overview-hint').style.display = 'none';
-    
-  }else{
-    // 개요(폴리곤만, 핀 없음)
-    if(baseBounds && !baseBounds.isEmpty()){
-      map.setBounds(baseBounds, 20, 20, 20, 20);
-    }
-    document.getElementById('stat-total').textContent = filtered.length;
-    document.getElementById('header-title').innerHTML = '강남구 <span>사업장 지도</span>';
-    document.getElementById('overview-hint').style.display = 'block';
-    
+  if(activeMarkers.length > 0){
+    const bounds = new kakao.maps.LatLngBounds();
+    activeMarkers.forEach(m => bounds.extend(m.getPosition()));
+    map.setBounds(bounds, 30, 30, 30, 30);
+  }else if(baseBounds && !baseBounds.isEmpty()){
+    map.setBounds(baseBounds, 20, 20, 20, 20);
   }
+
+  document.getElementById('stat-total').textContent = filtered.length;
+  if(hasDongFilter && selectedDongs.size === 1){
+    document.getElementById('header-title').innerHTML = escapeHtml([...selectedDongs][0]) + ' <span>사업장</span>';
+  }else{
+    document.getElementById('header-title').innerHTML = '강남구 <span>사업장 지도</span>';
+  }
+  document.getElementById('overview-hint').style.display = 'none';
 
   renderSideList();
 }
@@ -2274,10 +2509,7 @@ function renderSideList(){
 }
 
 function renderSitesList(listEl, filterText){
-  let base = amountFilteredSites();
-  if(selectedDong && selectedDong !== 'ALL'){
-    base = base.filter(s => (s.sd || s.d) === selectedDong);
-  }
+  let base = dongAndAmountFilteredSites();
   let filtered = base.filter(s => matchesFilter(s, filterText));
 
   // 거리 계산(내 위치가 있을 때)
@@ -2287,22 +2519,18 @@ function renderSitesList(listEl, filterText){
 
   const frag = document.createDocumentFragment();
 
-  // '전체보기' 항목 - 항상 최상단에 노출. 클릭하면 전체 756건 핀이 지도에 표시됨(다시 누르면 개요로 해제)
+  // '전체보기' 항목 - 항상 최상단에 노출. 클릭하면 동 필터를 초기화함
   const allDiv = document.createElement('div');
   allDiv.className = 'dong-group';
   const allHead = document.createElement('div');
-  const totalCntForAll = amountFilteredSites().length;
-  const isAllActive = selectedDong === 'ALL';
+  const totalCntForAll = base.length;
+  const isAllActive = selectedDongs.size === 0;
   allHead.className = 'dong-head is-all-option' + (isAllActive ? ' is-active-dong' : '');
   allHead.innerHTML =
     '<span class="dong-head-name">' + (isAllActive ? '<span class="active-dot"></span>' : '') + '전체보기' + '</span>' +
     '<span><span class="cnt">' + totalCntForAll + '건</span></span>';
   allHead.addEventListener('click', () => {
-    if(selectedDong === 'ALL'){
-      clearSelection();
-    }else{
-      showAllPins();
-    }
+    showAllPins();
   });
   allDiv.appendChild(allHead);
   frag.appendChild(allDiv);
@@ -2351,20 +2579,21 @@ function renderSitesList(listEl, filterText){
       return (ia<0?999:ia) - (ib<0?999:ib);
     });
 
-    const forceOpen = !!(filterText || (selectedDong && selectedDong !== 'ALL') || dongKeys.length === 1);
+    const forceOpen = !!(filterText || selectedDongs.size > 0 || dongKeys.length === 1);
     dongKeys.forEach(dong => {
       const items = groups[dong];
       const groupDiv = document.createElement('div');
       groupDiv.className = 'dong-group';
 
       const head = document.createElement('div');
-      head.className = 'dong-head' + (forceOpen ? ' open' : '') + (selectedDong === dong ? ' is-active-dong' : '');
+      head.className = 'dong-head' + (forceOpen ? ' open' : '') + (selectedDongs.has(dong) ? ' is-active-dong' : '');
       head.innerHTML =
-        '<span class="dong-head-name">' + (selectedDong === dong ? '<span class="active-dot"></span>' : '') + escapeHtml(dong) + '</span>' +
+        '<span class="dong-head-name">' + (selectedDongs.has(dong) ? '<span class="active-dot"></span>' : '') + escapeHtml(dong) + '</span>' +
         '<span><span class="cnt">' + items.length + '건</span> <span class="arrow">▶</span></span>';
 
       const itemsDiv = document.createElement('div');
       itemsDiv.className = 'dong-items' + (forceOpen ? ' open' : '');
+
 
       items.forEach(s => {
         itemsDiv.appendChild(buildSiteItemEl(s, false));
@@ -2373,7 +2602,6 @@ function renderSitesList(listEl, filterText){
       head.addEventListener('click', () => {
         head.classList.toggle('open');
         itemsDiv.classList.toggle('open');
-        toggleDong(dong);
       });
 
       groupDiv.appendChild(head);
@@ -2401,10 +2629,6 @@ function buildSiteItemEl(s, showDongTag){
     '<div class="samount">' + formatAmount(s.m) + '</div>' +
     distHtml;
   div.addEventListener('click', () => {
-    if(selectedDong !== (s.sd || s.d)){
-      selectedDong = s.sd || s.d;
-      applyView();
-    }
     selectSite(s._idx, true);
   });
   return div;
@@ -2757,9 +2981,6 @@ function attachLocateButton(){
         btn.classList.add('active');
         myLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         sortMode = 'distance';  // 내 위치를 가져오면 자동으로 가까운순 정렬로 전환
-        if(!selectedDong){
-          selectedDong = 'ALL';  // 개요(핀 없음) 상태였다면 핀이 보이는 전체보기로 전환
-        }
         applyView();
         placeMyLocationMarker();
         map.setLevel(6);
