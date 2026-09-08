@@ -42,6 +42,31 @@
     --shadow-2:0 4px 16px rgba(10,30,52,.10);
     --shadow-3:0 12px 32px rgba(10,30,52,.16);
   }
+  html[data-theme="dark"]{
+    --gov-blue-light:#132844;
+    --ink:#e7ebef;
+    --ink-soft:#9aa7b4;
+    --line:#2a3541;
+    --line-soft:#232c37;
+    --bg:#12181f;
+    --panel:#1a2129;
+    --warn:#d99a5c;
+    --warn-soft:#3a2c1a;
+    --danger:#e17c74;
+    --danger-soft:#3a2220;
+    --ok:#6fbf94;
+    --shadow-1:0 1px 2px rgba(0,0,0,.3);
+    --shadow-2:0 4px 16px rgba(0,0,0,.4);
+    --shadow-3:0 12px 32px rgba(0,0,0,.5);
+  }
+  html[data-theme="dark"] #search-input{
+    color:#1a2530;
+  }
+  html[data-theme="dark"] .kakao-info,
+  html[data-theme="dark"] #mobile-pin-card,
+  html[data-theme="dark"] .suggest-item .sg-name{
+    color:var(--ink);
+  }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;}
   body{
@@ -402,6 +427,118 @@
     margin-right:6px;
   }
   #btn-admin-users:hover{background:rgba(255,255,255,.2);}
+  #btn-theme-toggle{
+    padding:4px 10px;
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:6px;
+    font-size:12px;
+    cursor:pointer;
+    margin-right:6px;
+    line-height:1.4;
+  }
+  #btn-theme-toggle:hover{background:rgba(255,255,255,.2);}
+  #btn-help{
+    padding:4px 10px;
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:6px;
+    font-size:12px;
+    cursor:pointer;
+    margin-right:6px;
+    line-height:1.4;
+  }
+  #btn-help:hover{background:rgba(255,255,255,.2);}
+
+  #onboarding-modal{
+    position:fixed; inset:0;
+    background:rgba(11,25,43,.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:400;
+    padding:20px;
+  }
+  #onboarding-box{
+    background:var(--panel);
+    border-radius:var(--radius-lg);
+    padding:28px 26px 22px;
+    max-width:400px;
+    width:100%;
+    box-shadow:var(--shadow-3);
+  }
+  .onboarding-step{display:none;}
+  .onboarding-step.active{display:block;}
+  .onboarding-step-icon{font-size:34px; margin-bottom:12px;}
+  .onboarding-step h4{font-size:16px; color:var(--gov-navy); margin-bottom:8px;}
+  .onboarding-step p{font-size:13px; color:var(--ink-soft); line-height:1.6;}
+  #onboarding-dots{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    margin:18px 0 4px;
+  }
+  .onboarding-dot{
+    width:6px; height:6px;
+    border-radius:50%;
+    background:var(--line);
+  }
+  .onboarding-dot.active{background:var(--gov-navy); width:16px; border-radius:3px;}
+  #onboarding-actions{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:16px;
+  }
+  #onboarding-skip{
+    font-size:12px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    text-decoration:underline;
+  }
+  #onboarding-next{
+    padding:9px 20px;
+    background:var(--gov-navy);
+    color:#fff;
+    border:none;
+    border-radius:var(--radius-sm);
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  #data-update-banner{
+    position:fixed;
+    top:16px; left:50%;
+    transform:translateX(-50%);
+    z-index:500;
+    background:var(--gov-navy);
+    color:#fff;
+    padding:11px 18px;
+    border-radius:999px;
+    font-size:12.5px;
+    font-weight:600;
+    box-shadow:var(--shadow-3);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    animation:banner-slide-in .3s ease-out;
+  }
+  #data-update-refresh{
+    background:rgba(255,255,255,.18);
+    padding:5px 12px;
+    border-radius:999px;
+    cursor:pointer;
+    font-weight:700;
+  }
+  #data-update-refresh:hover{background:rgba(255,255,255,.28);}
+  @keyframes banner-slide-in{
+    from{transform:translateX(-50%) translateY(-16px); opacity:0;}
+    to{transform:translateX(-50%) translateY(0); opacity:1;}
+  }
+
   #users-modal{
     position:fixed; inset:0;
     background:rgba(11,25,43,.55);
@@ -904,6 +1041,33 @@
     font-size:13px;
     line-height:1.6;
   }
+  .empty-illust{
+    font-size:36px;
+    margin-bottom:10px;
+    opacity:.5;
+  }
+
+  /* ===== 목록 스켈레톤 로딩 ===== */
+  .skeleton-row{
+    padding:13px 18px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .skeleton-line{
+    height:11px;
+    border-radius:5px;
+    background:linear-gradient(90deg, var(--line-soft) 25%, var(--line) 50%, var(--line-soft) 75%);
+    background-size:200% 100%;
+    animation:skeleton-shimmer 1.4s ease-in-out infinite;
+    margin-bottom:7px;
+  }
+  .skeleton-line:last-child{margin-bottom:0;}
+  .skeleton-line.w70{width:70%;}
+  .skeleton-line.w50{width:50%;}
+  .skeleton-line.w40{width:40%;}
+  @keyframes skeleton-shimmer{
+    0%{background-position:200% 0;}
+    100%{background-position:-200% 0;}
+  }
 
   #map-wrap{
     flex:1;
@@ -1297,6 +1461,39 @@
     vertical-align:-1px;
   }
   .sfav-mark{color:#d4a017; margin-right:4px;}
+
+  .ci-note-toggle{
+    margin-top:10px;
+    padding-top:9px;
+    border-top:1px solid var(--line-soft);
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .ci-note-arrow{font-size:10px;}
+  .ci-note-area{margin-top:8px;}
+  #ci-note-input{
+    width:100%;
+    min-height:56px;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    font-size:12px;
+    font-family:inherit;
+    resize:vertical;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  .ci-note-save{
+    width:100%;
+    margin-top:6px;
+    padding:7px 0 !important;
+    font-size:12px !important;
+  }
   .kakao-info .ci-row{margin:4px 0;color:var(--ink-soft);}
   .kakao-info .ci-row b{color:var(--ink);font-weight:700;margin-right:3px;}
   .kakao-info .ci-close{
@@ -1601,6 +1798,8 @@
     <span id="header-update-date"></span>
     <button id="btn-admin-upload" style="display:none">엑셀 업로드</button>
     <button id="btn-admin-users" style="display:none">관리자 설정</button>
+    <button id="btn-theme-toggle" title="다크모드 전환">🌙</button>
+    <button id="btn-help" title="사용방법 보기">❓</button>
     <button id="btn-logout">로그아웃</button>
   </div>
   <div id="header-main">
@@ -1715,6 +1914,18 @@
       <button id="btn-users-cancel">닫기</button>
     </div>
     <div id="users-list"></div>
+  </div>
+</div>
+
+<!-- 온보딩 가이드 -->
+<div id="onboarding-modal" style="display:none">
+  <div id="onboarding-box">
+    <div id="onboarding-steps"></div>
+    <div id="onboarding-dots"></div>
+    <div id="onboarding-actions">
+      <span id="onboarding-skip">건너뛰기</span>
+      <button id="onboarding-next">다음</button>
+    </div>
   </div>
 </div>
 
@@ -1914,9 +2125,49 @@ async function enterApp(){
     document.getElementById('btn-admin-upload').style.display = 'inline-block';
     document.getElementById('btn-admin-users').style.display = 'inline-block';
   }
+  renderListSkeleton();
   await loadSitesFromSupabase();
   await loadFavorites();
   initApp();
+  subscribeToSiteUpdates();
+  if(!localStorage.getItem('gnmap_onboarding_seen')){
+    openOnboarding();
+  }
+}
+
+/* ===== 데이터 갱신 실시간 알림 ===== */
+let lastOwnUploadAt = 0;
+
+function subscribeToSiteUpdates(){
+  sb.channel('gnmap_sites_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'gnmap_sites' }, () => {
+      // 본인이 방금 업로드한 직후(10초 이내) 발생한 이벤트는 이미 반영했으므로 배너를 띄우지 않음
+      if(Date.now() - lastOwnUploadAt < 10000) return;
+      showUpdateBanner();
+    })
+    .subscribe();
+}
+
+function showUpdateBanner(){
+  let banner = document.getElementById('data-update-banner');
+  if(banner) return; // 이미 떠 있으면 중복 표시하지 않음
+  banner = document.createElement('div');
+  banner.id = 'data-update-banner';
+  banner.innerHTML = '📢 사업장 데이터가 갱신되었습니다. <span id="data-update-refresh">새로고침</span>';
+  document.body.appendChild(banner);
+  document.getElementById('data-update-refresh').addEventListener('click', () => {
+    window.location.reload();
+  });
+}
+
+function renderListSkeleton(){
+  const listEl = document.getElementById('side-list');
+  if(!listEl) return;
+  let html = '';
+  for(let i = 0; i < 6; i++){
+    html += '<div class="skeleton-row"><div class="skeleton-line w70"></div><div class="skeleton-line w50"></div><div class="skeleton-line w40"></div></div>';
+  }
+  listEl.innerHTML = html;
 }
 
 /* ===== 즐겨찾기 ===== */
@@ -1946,6 +2197,51 @@ async function toggleFavorite(siteId, btnEl){
     btnEl.dataset.fav = nowFav ? '1' : '0';
   }
   renderSideList();
+}
+
+/* ===== 개인 메모 ===== */
+function attachNoteHandlers(content, siteId){
+  const toggle = content.querySelector('#ci-note-toggle');
+  const area = content.querySelector('#ci-note-area');
+  const input = content.querySelector('#ci-note-input');
+  const saveBtn = content.querySelector('#ci-note-save');
+  if(!toggle) return;
+
+  let loaded = false;
+
+  toggle.addEventListener('click', async () => {
+    const willOpen = area.style.display === 'none';
+    area.style.display = willOpen ? 'block' : 'none';
+    toggle.querySelector('.ci-note-arrow').textContent = willOpen ? '▴' : '▾';
+    if(willOpen && !loaded){
+      loaded = true;
+      input.placeholder = '불러오는 중...';
+      const { data } = await sb.from('gnmap_site_notes').select('content').eq('site_id', siteId).maybeSingle();
+      input.placeholder = '이 사업장에 대한 개인 메모를 남겨보세요 (본인만 볼 수 있습니다)';
+      if(data && data.content) input.value = data.content;
+    }
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    const text = input.value.trim();
+    saveBtn.disabled = true;
+    const origLabel = saveBtn.textContent;
+    saveBtn.textContent = '저장 중...';
+
+    const userId = CURRENT_PROFILE ? CURRENT_PROFILE.id : null;
+    if(!text){
+      await sb.from('gnmap_site_notes').delete().eq('site_id', siteId).eq('user_id', userId);
+    }else{
+      await sb.from('gnmap_site_notes').upsert(
+        { site_id: siteId, user_id: userId, content: text, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,site_id' }
+      );
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = '저장됨';
+    setTimeout(() => { saveBtn.textContent = origLabel; }, 1200);
+  });
 }
 
 /* ===== gnmap_sites → 지도 렌더링용 CONFIRMED/REVIEW 형식으로 변환 ===== */
@@ -1992,6 +2288,74 @@ async function loadSitesFromSupabase(){
 }
 
 /* ===== 자동 로그인 — Supabase 세션은 자체적으로 localStorage에 유지됨 ===== */
+/* ===== 다크모드 ===== */
+const THEME_KEY = 'gnmap_theme';
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('btn-theme-toggle');
+  if(btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function initTheme(){
+  const saved = localStorage.getItem(THEME_KEY);
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+}
+document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
+initTheme();
+
+/* ===== 온보딩 가이드 ===== */
+const ONBOARDING_STEPS = [
+  { icon: '🗺️', title: '지도로 사업장 확인', desc: '지도의 핀을 눌러 사업장 상세 정보를 확인할 수 있습니다. 여러 개가 모여 있으면 숫자 배지를 눌러 확대됩니다.' },
+  { icon: '🔎', title: '검색과 필터', desc: '상단 검색창에서 사업장명, 주소로 찾을 수 있고, 등록되지 않은 일반 주소도 검색됩니다. 공사금액·동 필터로 원하는 조건만 볼 수 있습니다.' },
+  { icon: '☰', title: '목록 보기', desc: '지도 하단의 "목록보기" 버튼을 누르면 전체 사업장 목록을 확인할 수 있습니다. 정렬 방식도 자유롭게 바꿀 수 있습니다.' },
+  { icon: '⭐', title: '즐겨찾기와 메모', desc: '자주 찾는 사업장은 정보창의 별표를 눌러 즐겨찾기에 추가하고, 개인 메모를 남길 수 있습니다.' },
+  { icon: '📋', title: '확인필요 탭', desc: '주소 확인이 되지 않은 사업장은 상단 "확인필요" 탭에서 별도로 관리됩니다.' }
+];
+let onboardingStepIdx = 0;
+
+function renderOnboarding(){
+  const stepsEl = document.getElementById('onboarding-steps');
+  const dotsEl = document.getElementById('onboarding-dots');
+  stepsEl.innerHTML = ONBOARDING_STEPS.map((s, i) =>
+    `<div class="onboarding-step${i === onboardingStepIdx ? ' active' : ''}">` +
+      `<div class="onboarding-step-icon">${s.icon}</div>` +
+      `<h4>${escapeHtml(s.title)}</h4>` +
+      `<p>${escapeHtml(s.desc)}</p>` +
+    `</div>`
+  ).join('');
+  dotsEl.innerHTML = ONBOARDING_STEPS.map((_, i) =>
+    `<span class="onboarding-dot${i === onboardingStepIdx ? ' active' : ''}"></span>`
+  ).join('');
+  document.getElementById('onboarding-next').textContent =
+    (onboardingStepIdx === ONBOARDING_STEPS.length - 1) ? '시작하기' : '다음';
+}
+
+function openOnboarding(){
+  onboardingStepIdx = 0;
+  renderOnboarding();
+  document.getElementById('onboarding-modal').style.display = 'flex';
+}
+function closeOnboarding(){
+  document.getElementById('onboarding-modal').style.display = 'none';
+  localStorage.setItem('gnmap_onboarding_seen', '1');
+}
+
+document.getElementById('onboarding-next').addEventListener('click', () => {
+  if(onboardingStepIdx < ONBOARDING_STEPS.length - 1){
+    onboardingStepIdx++;
+    renderOnboarding();
+  }else{
+    closeOnboarding();
+  }
+});
+document.getElementById('onboarding-skip').addEventListener('click', closeOnboarding);
+document.getElementById('btn-help').addEventListener('click', openOnboarding);
+
 window.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await sb.auth.getSession();
   if(session && session.user){
@@ -2233,6 +2597,7 @@ document.getElementById('btn-upload-start').addEventListener('click', async () =
     progressFill.style.width = '100%';
     progressText.textContent = '완료';
     statusEl.textContent = `업로드 완료! 총 ${rows.length}건 반영되었습니다.\n지도를 새로고침합니다...`;
+    lastOwnUploadAt = Date.now();
 
     await loadSitesFromSupabase();
     initApp();
@@ -2974,16 +3339,20 @@ function renderSitesList(listEl, filterText){
   sortBar.id = 'sort-bar';
   sortBar.innerHTML =
     '<label>정렬</label>' +
-    '<select id="sort-select" ' + (myLocation ? '' : 'disabled') + '>' +
+    '<select id="sort-select">' +
       '<option value="default"' + (sortMode==='default'?' selected':'') + '>동 순서</option>' +
-      '<option value="distance"' + (sortMode==='distance'?' selected':'') + '>내 위치에서 가까운 순</option>' +
+      '<option value="distance"' + (sortMode==='distance'?' selected':'') + (myLocation ? '' : ' disabled') + '>내 위치에서 가까운 순</option>' +
+      '<option value="amount-desc"' + (sortMode==='amount-desc'?' selected':'') + '>공사금액 높은순</option>' +
+      '<option value="amount-asc"' + (sortMode==='amount-asc'?' selected':'') + '>공사금액 낮은순</option>' +
+      '<option value="deadline"' + (sortMode==='deadline'?' selected':'') + '>공사기간 임박순</option>' +
+      '<option value="favorite"' + (sortMode==='favorite'?' selected':'') + '>즐겨찾기 우선</option>' +
     '</select>';
   frag.appendChild(sortBar);
 
   if(filtered.length === 0){
     const empty = document.createElement('div');
     empty.id = 'empty-msg';
-    empty.textContent = '조건에 맞는 사업장이 없습니다.';
+    empty.innerHTML = '<div class="empty-illust">🔍</div><div>조건에 맞는 사업장이 없습니다.</div>';
     frag.appendChild(empty);
     listEl.innerHTML = '';
     listEl.appendChild(frag);
@@ -2991,9 +3360,29 @@ function renderSitesList(listEl, filterText){
     return;
   }
 
-  if(sortMode === 'distance' && myLocation){
-    // 거리순: 그룹 없이 하나의 리스트로
-    filtered.sort((a,b) => a._dist - b._dist);
+  const isFlatSort = ['distance', 'amount-desc', 'amount-asc', 'deadline', 'favorite'].includes(sortMode) &&
+    !(sortMode === 'distance' && !myLocation);
+
+  if(isFlatSort){
+    // 그룹 없이 하나의 리스트로 정렬
+    if(sortMode === 'distance'){
+      filtered.sort((a,b) => a._dist - b._dist);
+    }else if(sortMode === 'amount-desc'){
+      filtered.sort((a,b) => (b.m || 0) - (a.m || 0));
+    }else if(sortMode === 'amount-asc'){
+      filtered.sort((a,b) => (a.m || 0) - (b.m || 0));
+    }else if(sortMode === 'deadline'){
+      const toTime = v => v ? new Date(v).getTime() : Infinity;
+      filtered.sort((a,b) => toTime(a.e) - toTime(b.e));
+    }else if(sortMode === 'favorite'){
+      filtered.sort((a,b) => {
+        const fa = FAVORITE_SITE_IDS.has(a.id) ? 0 : 1;
+        const fb = FAVORITE_SITE_IDS.has(b.id) ? 0 : 1;
+        if(fa !== fb) return fa - fb;
+        const ia = DONG_ORDER.indexOf(a.d), ib = DONG_ORDER.indexOf(b.d);
+        return (ia<0?999:ia) - (ib<0?999:ib);
+      });
+    }
     const itemsDiv = document.createElement('div');
     itemsDiv.className = 'dong-items open';
     filtered.forEach(s => {
@@ -3121,7 +3510,7 @@ function renderReviewList(listEl, filterText){
   if(filtered.length === 0){
     const empty = document.createElement('div');
     empty.id = 'empty-msg';
-    empty.textContent = '조건에 맞는 사업장이 없습니다.';
+    empty.innerHTML = '<div class="empty-illust">🔍</div><div>조건에 맞는 사업장이 없습니다.</div>';
     frag.appendChild(empty);
     listEl.innerHTML = '';
     listEl.appendChild(frag);
@@ -3235,6 +3624,11 @@ function selectSite(idx, moveMap){
     '<div class="ci-actions">' +
       '<button class="ci-btn ci-btn-primary" id="ci-nav-btn"><span class="ci-btn-icon">🧭</span>길찾기</button>' +
       '<button class="ci-btn" id="ci-copy-btn"><span class="ci-btn-icon">🔗</span>공유</button>' +
+    '</div>' +
+    '<div class="ci-note-toggle" id="ci-note-toggle">📝 개인 메모 <span class="ci-note-arrow">▾</span></div>' +
+    '<div class="ci-note-area" id="ci-note-area" style="display:none">' +
+      '<textarea id="ci-note-input" placeholder="이 사업장에 대한 개인 메모를 남겨보세요 (본인만 볼 수 있습니다)"></textarea>' +
+      '<button class="ci-btn ci-btn-primary ci-note-save" id="ci-note-save">저장</button>' +
     '</div>';
 
   let content;
@@ -3276,6 +3670,7 @@ function selectSite(idx, moveMap){
   if(favBtn){
     favBtn.addEventListener('click', () => toggleFavorite(s.id, favBtn));
   }
+  attachNoteHandlers(content, s.id);
 
   if(moveMap){
     map.setLevel(4);
@@ -3753,7 +4148,7 @@ function renderSearchSuggest(text){
       suggestBox.appendChild(item);
     });
   }else{
-    suggestBox.innerHTML = '<div class="suggest-empty">등록된 사업장 중 일치하는 결과가 없습니다.</div>';
+    suggestBox.innerHTML = '<div class="suggest-empty">🔍 등록된 사업장 중 일치하는 결과가 없습니다.</div>';
   }
 
   suggestBox.style.display = 'block';
