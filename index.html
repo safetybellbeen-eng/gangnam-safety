@@ -1860,8 +1860,6 @@ function initApp(){
   REVIEW = window.REVIEW;
 
   document.getElementById('review-count').textContent = REVIEW.length;
-  const dateEl = document.getElementById('header-update-date');
-  if(dateEl) dateEl.textContent = '데이터 기준일 ' + DATA_UPDATED_AT.replace(/-/g,'.');
 
   kakao.maps.load(function(){
     const container = document.getElementById('map');
