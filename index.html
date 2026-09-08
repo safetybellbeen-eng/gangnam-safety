@@ -618,6 +618,7 @@
     padding:9px 11px;
     border-radius:7px;
     cursor:pointer;
+    position:relative;
   }
   .suggest-item:hover, .suggest-item.active{background:var(--gov-blue-light);}
   .suggest-item .sg-name{font-size:12.5px; font-weight:700; color:var(--ink);}
@@ -628,9 +629,34 @@
     font-size:11px;
     font-weight:700;
     color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
   }
+  .suggest-clear-all{
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--gov-blue);
+    cursor:pointer;
+  }
+  .suggest-clear-all:hover{text-decoration:underline;}
   .suggest-recent .sg-name{font-weight:600; display:inline;}
   .sg-recent-icon{margin-right:6px; font-size:11px;}
+  .sg-recent-remove{
+    position:absolute;
+    right:9px; top:50%;
+    transform:translateY(-50%);
+    width:18px; height:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    font-size:10px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .sg-recent-remove:hover{background:var(--line-soft); color:var(--danger);}
+  .suggest-recent, .suggest-item:has(.sg-recent-remove){padding-right:30px;}
 
   .toolbar-btn{
     padding:7px 13px;
@@ -2127,6 +2153,26 @@ async function geocodeAddress(address){
   };
 }
 
+/* 일반 주소/장소 검색 (등록된 사업장이 아닌 임의 지점) - 카카오 키워드 검색 API, 강남구 중심 편향 */
+async function searchKakaoPlaces(query){
+  const url = 'https://dapi.kakao.com/v2/local/search/keyword.json?query=' + encodeURIComponent(query) +
+    '&x=127.0473&y=37.5172&radius=15000&size=5';
+  try{
+    const res = await fetch(url, { headers: { 'Authorization': 'KakaoAK ' + KAKAO_REST_KEY } });
+    if(!res.ok) return [];
+    const data = await res.json();
+    if(!data.documents) return [];
+    return data.documents.map(doc => ({
+      name: doc.place_name,
+      address: doc.road_address_name || doc.address_name,
+      lat: parseFloat(doc.y),
+      lng: parseFloat(doc.x)
+    }));
+  }catch(e){
+    return [];
+  }
+}
+
 /* ============================================================
    관리자 회원 관리
    ============================================================ */
@@ -3419,6 +3465,17 @@ function getRecentSearches(){
   try{ return JSON.parse(localStorage.getItem(recentStorageKey('searches')) || '[]'); }catch(e){ return []; }
 }
 
+function removeRecentSearch(text){
+  const key = recentStorageKey('searches');
+  let list = getRecentSearches();
+  list = list.filter(t => t !== text);
+  localStorage.setItem(key, JSON.stringify(list));
+}
+
+function clearRecentSearches(){
+  localStorage.removeItem(recentStorageKey('searches'));
+}
+
 function recordRecentSite(s){
   const key = recentStorageKey('sites');
   let list = [];
@@ -3431,6 +3488,17 @@ function recordRecentSite(s){
 
 function getRecentSites(){
   try{ return JSON.parse(localStorage.getItem(recentStorageKey('sites')) || '[]'); }catch(e){ return []; }
+}
+
+function removeRecentSite(target){
+  const key = recentStorageKey('sites');
+  let list = getRecentSites();
+  list = list.filter(item => item.n !== target.n || item.a !== target.a);
+  localStorage.setItem(key, JSON.stringify(list));
+}
+
+function clearRecentSites(){
+  localStorage.removeItem(recentStorageKey('sites'));
 }
 
 function renderSearchSuggest(text){
@@ -3449,12 +3517,24 @@ function renderSearchSuggest(text){
     if(recentSearches.length > 0){
       const head = document.createElement('div');
       head.className = 'suggest-section-head';
-      head.textContent = '최근 검색어';
+      head.innerHTML = '<span>최근 검색어</span><span class="suggest-clear-all" id="clear-recent-searches">전체 지우기</span>';
       suggestBox.appendChild(head);
+      head.querySelector('#clear-recent-searches').addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearRecentSearches();
+        renderSearchSuggest('');
+      });
       recentSearches.forEach(q => {
         const item = document.createElement('div');
         item.className = 'suggest-item suggest-recent';
-        item.innerHTML = '<span class="sg-recent-icon">🕑</span><span class="sg-name">' + escapeHtml(q) + '</span>';
+        item.innerHTML =
+          '<span class="sg-recent-icon">🕑</span><span class="sg-name">' + escapeHtml(q) + '</span>' +
+          '<span class="sg-recent-remove" title="삭제">✕</span>';
+        item.querySelector('.sg-recent-remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          removeRecentSearch(q);
+          renderSearchSuggest('');
+        });
         item.addEventListener('click', () => {
           document.getElementById('search-input').value = q;
           renderSideList();
@@ -3467,14 +3547,25 @@ function renderSearchSuggest(text){
     if(recentSites.length > 0){
       const head = document.createElement('div');
       head.className = 'suggest-section-head';
-      head.textContent = '최근 본 사업장';
+      head.innerHTML = '<span>최근 본 사업장</span><span class="suggest-clear-all" id="clear-recent-sites">전체 지우기</span>';
       suggestBox.appendChild(head);
+      head.querySelector('#clear-recent-sites').addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearRecentSites();
+        renderSearchSuggest('');
+      });
       recentSites.forEach(rs => {
         const item = document.createElement('div');
         item.className = 'suggest-item';
         item.innerHTML =
           '<div class="sg-name">' + escapeHtml(rs.n) + '</div>' +
-          '<div class="sg-addr">' + escapeHtml(rs.a || '') + '</div>';
+          '<div class="sg-addr">' + escapeHtml(rs.a || '') + '</div>' +
+          '<span class="sg-recent-remove" title="삭제">✕</span>';
+        item.querySelector('.sg-recent-remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          removeRecentSite(rs);
+          renderSearchSuggest('');
+        });
         item.addEventListener('click', () => {
           suggestBox.style.display = 'none';
           const found = CONFIRMED.findIndex(s => s.n === rs.n && s.a === rs.a);
@@ -3489,31 +3580,116 @@ function renderSearchSuggest(text){
   }
 
   const base = (activeTab === 'sites') ? dongAndAmountFilteredSites() : REVIEW.map((s, idx) => ({...s, _idx: idx}));
-  const matched = base.filter(s => matchesFilter(s, text)).slice(0, 8);
-
-  if(matched.length === 0){
-    suggestBox.innerHTML = '<div class="suggest-empty">검색 결과가 없습니다.</div>';
-    suggestBox.style.display = 'block';
-    return;
-  }
+  const matched = base.filter(s => matchesFilter(s, text)).slice(0, 6);
 
   suggestBox.innerHTML = '';
-  matched.forEach(s => {
-    const item = document.createElement('div');
-    item.className = 'suggest-item';
-    item.innerHTML =
-      '<div class="sg-name">' + escapeHtml(s.n) + '</div>' +
-      '<div class="sg-addr">' + escapeHtml(s.a || s.p || '') + '</div>';
-    item.addEventListener('click', () => {
-      suggestBox.style.display = 'none';
-      recordRecentSearch(text);
-      if(activeTab === 'sites' && s.lat && s.lng){
-        selectSite(s._idx, true);
-      }
+
+  if(matched.length > 0){
+    const head = document.createElement('div');
+    head.className = 'suggest-section-head';
+    head.innerHTML = '<span>등록된 사업장</span>';
+    suggestBox.appendChild(head);
+    matched.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'suggest-item';
+      item.innerHTML =
+        '<div class="sg-name">' + escapeHtml(s.n) + '</div>' +
+        '<div class="sg-addr">' + escapeHtml(s.a || s.p || '') + '</div>';
+      item.addEventListener('click', () => {
+        suggestBox.style.display = 'none';
+        recordRecentSearch(text);
+        if(activeTab === 'sites' && s.lat && s.lng){
+          selectSite(s._idx, true);
+        }
+      });
+      suggestBox.appendChild(item);
     });
-    suggestBox.appendChild(item);
-  });
+  }else{
+    suggestBox.innerHTML = '<div class="suggest-empty">등록된 사업장 중 일치하는 결과가 없습니다.</div>';
+  }
+
   suggestBox.style.display = 'block';
+
+  // 일반 주소/장소 검색(카카오) - 사업장 검색과 별개로 항상 함께 보여줌, 비동기 결과라 늦게 붙음
+  searchSuggestRequestId++;
+  const myRequestId = searchSuggestRequestId;
+  searchKakaoPlaces(text).then(places => {
+    if(myRequestId !== searchSuggestRequestId) return; // 그 사이 다른 검색어로 바뀌었으면 무시
+    if(document.getElementById('search-input').value.trim() !== text) return;
+    if(!places || places.length === 0) return;
+
+    const head = document.createElement('div');
+    head.className = 'suggest-section-head';
+    head.innerHTML = '<span>주소/장소 검색 결과</span>';
+    suggestBox.appendChild(head);
+
+    places.forEach(place => {
+      const item = document.createElement('div');
+      item.className = 'suggest-item';
+      item.innerHTML =
+        '<div class="sg-name">' + escapeHtml(place.name) + '</div>' +
+        '<div class="sg-addr">' + escapeHtml(place.address || '') + '</div>';
+      item.addEventListener('click', () => {
+        suggestBox.style.display = 'none';
+        recordRecentSearch(text);
+        goToKakaoPlace(place);
+      });
+      suggestBox.appendChild(item);
+    });
+  });
+}
+
+let searchSuggestRequestId = 0;
+
+/* 사업장 DB에 없는 임의 지점(주소/장소 검색 결과)으로 지도만 이동, 정보 카드는 간이 형태로 표시 */
+function goToKakaoPlace(place){
+  const pos = new kakao.maps.LatLng(place.lat, place.lng);
+  map.setLevel(4);
+  map.panTo(pos);
+
+  if(currentInfo){ currentInfo.setMap(null); currentInfo = null; }
+  const mobileCard = document.getElementById('mobile-pin-card');
+  const isMobile = window.innerWidth <= 760;
+
+  const infoHtml =
+    '<div class="ci-close" id="ci-close-btn">&times;</div>' +
+    '<div class="ci-name">' + escapeHtml(place.name) + '</div>' +
+    '<div class="ci-row"><b>주소</b> ' + escapeHtml(place.address || '') + '</div>' +
+    '<div class="ci-flag">등록된 사업장 정보가 아닌 일반 검색 결과입니다.</div>' +
+    '<div class="ci-actions">' +
+      '<button class="ci-btn ci-btn-primary" id="ci-nav-btn"><span class="ci-btn-icon">🧭</span>길찾기</button>' +
+    '</div>';
+
+  let content;
+  if(isMobile){
+    mobileCard.innerHTML = infoHtml;
+    mobileCard.style.display = 'block';
+    content = mobileCard;
+  }else{
+    content = document.createElement('div');
+    content.className = 'kakao-info';
+    content.innerHTML = infoHtml;
+    currentInfo = new kakao.maps.CustomOverlay({
+      position: pos,
+      content: content,
+      yAnchor: 1.35,
+      zIndex: 10
+    });
+    currentInfo.setMap(map);
+  }
+
+  content.querySelector('#ci-close-btn').addEventListener('click', () => {
+    if(isMobile){
+      mobileCard.style.display = 'none';
+      mobileCard.innerHTML = '';
+    }else{
+      currentInfo.setMap(null);
+      currentInfo = null;
+    }
+  });
+  content.querySelector('#ci-nav-btn').addEventListener('click', () => {
+    openNavigation({ n: place.name, a: place.address, lat: place.lat, lng: place.lng });
+  });
 }
 
 </script>
