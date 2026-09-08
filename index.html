@@ -617,6 +617,14 @@
   .suggest-item .sg-name{font-size:12.5px; font-weight:700; color:var(--ink);}
   .suggest-item .sg-addr{font-size:11px; color:var(--ink-soft); margin-top:2px;}
   .suggest-empty{padding:14px 11px; font-size:12px; color:var(--ink-soft); text-align:center;}
+  .suggest-section-head{
+    padding:8px 11px 4px;
+    font-size:11px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+  .suggest-recent .sg-name{font-weight:600; display:inline;}
+  .sg-recent-icon{margin-right:6px; font-size:11px;}
 
   .toolbar-btn{
     padding:7px 13px;
@@ -864,14 +872,42 @@
   #map-loading{
     position:absolute;
     inset:0;
-    background:var(--bg);
+    background:linear-gradient(135deg, #0d2038 0%, #0b3d6e 55%, #0d2038 100%);
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:13px;
-    color:var(--ink-soft);
     z-index:5;
+    overflow:hidden;
   }
+  #map-loading .skeleton-grid{
+    position:absolute;
+    inset:0;
+    opacity:.14;
+    background-image:
+      repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 64px),
+      repeating-linear-gradient(90deg, #fff 0, #fff 1px, transparent 1px, transparent 64px);
+  }
+  #map-loading .skeleton-msg{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+  }
+  #map-loading .skeleton-spinner{
+    width:34px; height:34px;
+    border:3px solid rgba(255,255,255,.22);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:skeleton-spin .85s linear infinite;
+  }
+  #map-loading .skeleton-text{
+    font-size:12.5px;
+    color:rgba(255,255,255,.82);
+    font-weight:600;
+    letter-spacing:.2px;
+  }
+  @keyframes skeleton-spin{ to{ transform:rotate(360deg); } }
 
   .legend{
     position:absolute;
@@ -1068,7 +1104,7 @@
     border-top:1px solid var(--line,#e5e9ee);
     margin-top:4px;
   }
-  #amount-filter-apply{
+  #amount-filter-apply, #dong-filter-apply{
     width:100%;
     padding:7px 0;
     background:var(--gov-blue);
@@ -1079,7 +1115,7 @@
     font-weight:700;
     cursor:pointer;
   }
-  #amount-filter-apply:hover{opacity:.9;}
+  #amount-filter-apply:hover, #dong-filter-apply:hover{opacity:.9;}
 
   /* ===== 동 선택 필터 (공사금액 필터와 동일한 UI 패턴 재사용) ===== */
   #dong-filter-wrap{
@@ -1245,7 +1281,12 @@
     color:var(--ink);
     cursor:pointer;
     text-align:center;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
   }
+  .ci-btn-icon{font-size:13px; line-height:1;}
   .ci-btn:active{background:var(--bg);}
   .ci-btn-primary{
     background:var(--gov-navy);
@@ -1553,7 +1594,13 @@
 
 <div id="main" style="display:none">
   <div id="map-wrap">
-    <div id="map-loading">지도를 불러오는 중…</div>
+    <div id="map-loading">
+      <div class="skeleton-grid"></div>
+      <div class="skeleton-msg">
+        <div class="skeleton-spinner"></div>
+        <div class="skeleton-text">지도를 불러오는 중…</div>
+      </div>
+    </div>
     <div id="map"></div>
     <div id="overview-hint">강남구 전체 현황 · 동을 눌러 사업장을 확인하세요 (다시 누르면 해제)</div>
     <button id="btn-locate" title="내 위치">
@@ -2143,6 +2190,12 @@ async function loadUsersList(){
         revokeBtn.textContent = '승인취소';
         revokeBtn.addEventListener('click', () => updateUserApproval(u.id, false));
         actionsEl.appendChild(revokeBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-revoke';
+        deleteBtn.textContent = '계정 삭제';
+        deleteBtn.addEventListener('click', () => rejectUser(u.id, u.name));
+        actionsEl.appendChild(deleteBtn);
       }
     }
 
@@ -2160,7 +2213,7 @@ async function updateUserApproval(userId, approved){
 }
 
 async function rejectUser(userId, name){
-  if(!confirm((name || '이 사용자') + '의 가입 신청을 거부(삭제)하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  if(!confirm((name || '이 사용자') + '의 계정을 삭제하시겠습니까?\n삭제 후 다시 로그인하면 승인대기 상태로 초기화됩니다.\n이 작업은 되돌릴 수 없습니다.')) return;
   const { error } = await sb.from('gnmap_profiles').delete().eq('id', userId);
   if(error){
     alert('처리 중 오류가 발생했습니다: ' + error.message);
@@ -2249,18 +2302,57 @@ function initApp(){
       averageCenter: true,
       minLevel: 6,
       disableClickZoom: false,
-      styles: [{
-        width:'38px', height:'38px',
-        background:'rgba(11,61,110,.92)',
-        borderRadius:'19px',
-        color:'#fff',
-        textAlign:'center',
-        lineHeight:'38px',
-        fontSize:'13px',
-        fontWeight:'700',
-        border:'2px solid #fff',
-        boxShadow:'0 2px 8px rgba(0,0,0,.25)'
-      }]
+      calculator: [10, 30, 100],
+      styles: [
+        { // 1단계: 10건 미만
+          width:'34px', height:'34px',
+          background:'rgba(24,102,200,.88)',
+          borderRadius:'17px',
+          color:'#fff',
+          textAlign:'center',
+          lineHeight:'34px',
+          fontSize:'12px',
+          fontWeight:'700',
+          border:'2px solid #fff',
+          boxShadow:'0 2px 8px rgba(11,61,110,.3)'
+        },
+        { // 2단계: 10~29건
+          width:'42px', height:'42px',
+          background:'rgba(11,61,110,.9)',
+          borderRadius:'21px',
+          color:'#fff',
+          textAlign:'center',
+          lineHeight:'42px',
+          fontSize:'13.5px',
+          fontWeight:'700',
+          border:'2px solid #fff',
+          boxShadow:'0 3px 10px rgba(11,61,110,.35)'
+        },
+        { // 3단계: 30~99건
+          width:'50px', height:'50px',
+          background:'rgba(8,45,82,.94)',
+          borderRadius:'25px',
+          color:'#fff',
+          textAlign:'center',
+          lineHeight:'50px',
+          fontSize:'15px',
+          fontWeight:'800',
+          border:'3px solid #fff',
+          boxShadow:'0 4px 14px rgba(8,45,82,.4)'
+        },
+        { // 4단계: 100건 이상
+          width:'58px', height:'58px',
+          background:'rgba(3,26,50,.96)',
+          borderRadius:'29px',
+          color:'#fff',
+          textAlign:'center',
+          lineHeight:'58px',
+          fontSize:'16px',
+          fontWeight:'800',
+          border:'3px solid #fff',
+          boxShadow:'0 5px 18px rgba(3,26,50,.45)'
+        }
+      ]
     });
 
     buildMarkers();
@@ -2443,7 +2535,9 @@ function attachDongFilter(){
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
-    menu.classList.toggle('open');
+    const willOpen = !menu.classList.contains('open');
+    document.getElementById('amount-filter-menu').classList.remove('open');
+    menu.classList.toggle('open', willOpen);
   });
   document.addEventListener('click', () => {
     menu.classList.remove('open');
@@ -2914,6 +3008,8 @@ function selectSite(idx, moveMap){
   const s = CONFIRMED[idx];
   if(!s) return;
 
+  recordRecentSite(s);
+
   document.querySelectorAll('.site-item.selected').forEach(el => el.classList.remove('selected'));
   const targetEl = document.querySelector('.site-item[data-idx="' + idx + '"]');
   if(targetEl){
@@ -2941,8 +3037,8 @@ function selectSite(idx, moveMap){
     '<div class="ci-row"><b>공사금액</b> ' + formatAmount(s.m) + '</div>' +
     (s.ap ? '<div class="ci-flag">좌표 정확도 낮음(참고용)</div>' : '') +
     '<div class="ci-actions">' +
-      '<button class="ci-btn ci-btn-primary" id="ci-nav-btn">길찾기</button>' +
-      '<button class="ci-btn" id="ci-copy-btn">주소복사</button>' +
+      '<button class="ci-btn ci-btn-primary" id="ci-nav-btn"><span class="ci-btn-icon">🧭</span>길찾기</button>' +
+      '<button class="ci-btn" id="ci-copy-btn"><span class="ci-btn-icon">🔗</span>공유</button>' +
     '</div>';
 
   let content;
@@ -2978,7 +3074,7 @@ function selectSite(idx, moveMap){
     openNavigation(s);
   });
   content.querySelector('#ci-copy-btn').addEventListener('click', (e) => {
-    copyAddress(s.a, e.target);
+    shareSite(s, e.target.closest('button'));
   });
 
   if(moveMap){
@@ -3051,6 +3147,27 @@ function copyAddress(address, btnEl){
   }
 }
 
+/* 모바일(Web Share API 지원 기기)은 공유 시트, 아니면 클립보드 복사로 대체 */
+function shareSite(s, btnEl){
+  const shareText = `[${s.n}]\n${s.a || ''}`;
+  if(navigator.share){
+    navigator.share({ title: s.n, text: shareText }).catch(() => {});
+  }else{
+    const done = () => {
+      if(btnEl){
+        const orig = btnEl.innerHTML;
+        btnEl.innerHTML = '복사됨';
+        setTimeout(() => { btnEl.innerHTML = orig; }, 1200);
+      }
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(shareText).then(done).catch(() => fallbackCopy(shareText, done));
+    }else{
+      fallbackCopy(shareText, done);
+    }
+  }
+}
+
 function fallbackCopy(text, cb){
   const ta = document.createElement('textarea');
   ta.value = text;
@@ -3100,7 +3217,9 @@ function attachAmountFilter(){
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
-    menu.classList.toggle('open');
+    const willOpen = !menu.classList.contains('open');
+    document.getElementById('dong-filter-menu').classList.remove('open');
+    menu.classList.toggle('open', willOpen);
   });
   document.addEventListener('click', () => {
     menu.classList.remove('open');
@@ -3256,7 +3375,14 @@ function attachHandlers(){
   });
 
   searchInput.addEventListener('focus', () => {
-    if(searchInput.value.trim()) renderSearchSuggest(searchInput.value.trim());
+    renderSearchSuggest(searchInput.value.trim());
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && searchInput.value.trim()){
+      recordRecentSearch(searchInput.value.trim());
+      suggestBox.style.display = 'none';
+    }
   });
 
   document.addEventListener('click', (e) => {
@@ -3266,11 +3392,93 @@ function attachHandlers(){
   });
 }
 
+/* ===== 최근 검색어 / 최근 본 사업장 (로그인 계정별 로컬 저장) ===== */
+function recentStorageKey(kind){
+  const uid = (CURRENT_PROFILE && CURRENT_PROFILE.id) ? CURRENT_PROFILE.id : 'anon';
+  return 'gnmap_recent_' + kind + '_' + uid;
+}
+
+function recordRecentSearch(text){
+  if(!text) return;
+  const key = recentStorageKey('searches');
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){ list = []; }
+  list = list.filter(t => t !== text);
+  list.unshift(text);
+  list = list.slice(0, 8);
+  localStorage.setItem(key, JSON.stringify(list));
+}
+
+function getRecentSearches(){
+  try{ return JSON.parse(localStorage.getItem(recentStorageKey('searches')) || '[]'); }catch(e){ return []; }
+}
+
+function recordRecentSite(s){
+  const key = recentStorageKey('sites');
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){ list = []; }
+  list = list.filter(item => item.n !== s.n || item.a !== s.a);
+  list.unshift({ n: s.n, a: s.a, lat: s.lat, lng: s.lng });
+  list = list.slice(0, 6);
+  localStorage.setItem(key, JSON.stringify(list));
+}
+
+function getRecentSites(){
+  try{ return JSON.parse(localStorage.getItem(recentStorageKey('sites')) || '[]'); }catch(e){ return []; }
+}
+
 function renderSearchSuggest(text){
   const suggestBox = document.getElementById('search-suggest');
+
   if(!text){
-    suggestBox.style.display = 'none';
+    const recentSearches = getRecentSearches();
+    const recentSites = getRecentSites();
+    if(recentSearches.length === 0 && recentSites.length === 0){
+      suggestBox.style.display = 'none';
+      suggestBox.innerHTML = '';
+      return;
+    }
     suggestBox.innerHTML = '';
+
+    if(recentSearches.length > 0){
+      const head = document.createElement('div');
+      head.className = 'suggest-section-head';
+      head.textContent = '최근 검색어';
+      suggestBox.appendChild(head);
+      recentSearches.forEach(q => {
+        const item = document.createElement('div');
+        item.className = 'suggest-item suggest-recent';
+        item.innerHTML = '<span class="sg-recent-icon">🕑</span><span class="sg-name">' + escapeHtml(q) + '</span>';
+        item.addEventListener('click', () => {
+          document.getElementById('search-input').value = q;
+          renderSideList();
+          renderSearchSuggest(q);
+        });
+        suggestBox.appendChild(item);
+      });
+    }
+
+    if(recentSites.length > 0){
+      const head = document.createElement('div');
+      head.className = 'suggest-section-head';
+      head.textContent = '최근 본 사업장';
+      suggestBox.appendChild(head);
+      recentSites.forEach(rs => {
+        const item = document.createElement('div');
+        item.className = 'suggest-item';
+        item.innerHTML =
+          '<div class="sg-name">' + escapeHtml(rs.n) + '</div>' +
+          '<div class="sg-addr">' + escapeHtml(rs.a || '') + '</div>';
+        item.addEventListener('click', () => {
+          suggestBox.style.display = 'none';
+          const found = CONFIRMED.findIndex(s => s.n === rs.n && s.a === rs.a);
+          if(found >= 0) selectSite(found, true);
+        });
+        suggestBox.appendChild(item);
+      });
+    }
+
+    suggestBox.style.display = 'block';
     return;
   }
 
@@ -3292,6 +3500,7 @@ function renderSearchSuggest(text){
       '<div class="sg-addr">' + escapeHtml(s.a || s.p || '') + '</div>';
     item.addEventListener('click', () => {
       suggestBox.style.display = 'none';
+      recordRecentSearch(text);
       if(activeTab === 'sites' && s.lat && s.lng){
         selectSite(s._idx, true);
       }
