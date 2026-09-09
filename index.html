@@ -43,7 +43,11 @@
     --shadow-3:0 12px 32px rgba(10,30,52,.16);
   }
   html[data-theme="dark"]{
-    --gov-blue-light:#132844;
+    --gov-navy:#0a2e52;
+    --gov-navy-dark:#071f38;
+    --gov-blue:#5b9bdb;
+    --gov-blue-light:#1c2e42;
+    --gov-sky:#7fb0e0;
     --ink:#e7ebef;
     --ink-soft:#9aa7b4;
     --line:#2a3541;
@@ -1034,7 +1038,6 @@
 
   #header-top{
     padding:9px 24px;
-    padding-top:calc(9px + env(safe-area-inset-top));
     display:flex;
     align-items:center;
     gap:10px;
@@ -1042,6 +1045,14 @@
     color:#a9c3e3;
     font-weight:600;
     border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  /* 상황판이 없을 때만 헤더 상단바가 화면 맨 위이므로 안전영역 패딩을 여기 적용 */
+  body:not(.has-supervision-board) #header-top{
+    padding-top:calc(9px + env(safe-area-inset-top));
+  }
+  /* 상황판이 있을 때는 상황판이 화면 맨 위이므로 안전영역을 상황판에 적용 */
+  body.has-supervision-board #supervision-board{
+    padding-top:calc(7px + env(safe-area-inset-top));
   }
   #header-top .gov-mark{
     width:16px;height:16px;
@@ -1378,6 +1389,12 @@
     font-size:12.5px;
     line-height:1.55;
   }
+  .site-item .speriod{
+    color:var(--ink-soft);
+    font-size:11.5px;
+    margin-top:3px;
+    white-space:nowrap;
+  }
   .site-item .samount{
     color:var(--gov-blue);
     font-size:12.5px;
@@ -1440,7 +1457,7 @@
     width:100%;
     padding:8px;
     margin-bottom:8px;
-    background:#fff;
+    background:var(--panel);
     border:1.5px solid var(--gov-blue);
     color:var(--gov-blue);
     border-radius:8px;
@@ -1527,9 +1544,6 @@
   #map{
     width:100%;
     height:100%;
-  }
-  html[data-theme="dark"] #map{
-    filter:brightness(.82) contrast(1.05) saturate(.85);
   }
 
   #map-loading{
@@ -1637,6 +1651,14 @@
     background:var(--bg);
     border-bottom:1px solid var(--line);
     font-size:12px;
+  }
+  #flat-sort-dong-note{
+    padding:8px 16px;
+    background:var(--gov-blue-light);
+    color:var(--gov-blue);
+    font-size:12px;
+    font-weight:700;
+    border-bottom:1px solid var(--line);
   }
   #sort-bar label{
     color:var(--ink-soft);
@@ -1940,6 +1962,8 @@
     margin-bottom:9px;
     padding-right:20px;
     color:var(--ink);
+    word-break:break-word;
+    overflow-wrap:break-word;
   }
   .ci-fav-btn{
     margin-left:8px;
@@ -1992,7 +2016,7 @@
     padding:7px 0 !important;
     font-size:12px !important;
   }
-  .kakao-info .ci-row{margin:4px 0;color:var(--ink-soft);}
+  .kakao-info .ci-row{margin:4px 0;color:var(--ink-soft);word-break:break-word;overflow-wrap:break-word;}
   .kakao-info .ci-row b{color:var(--ink);font-weight:700;margin-right:3px;}
   .kakao-info .ci-close{
     position:absolute;
@@ -2047,22 +2071,27 @@
   /* ===== 모바일 핀 클릭 시 하단 고정 카드 ===== */
   #mobile-pin-card{
     position:absolute;
-    left:10px; right:10px; bottom:16px;
+    left:8px; right:8px; bottom:12px;
     background:var(--panel);
-    border-radius:var(--radius-lg);
+    border-radius:var(--radius-md);
     box-shadow:var(--shadow-3);
-    padding:14px 16px;
+    padding:12px 14px 10px;
     z-index:15;
     border-top:3px solid var(--gov-navy);
     animation:pin-card-slide-up .2s cubic-bezier(.2,.9,.3,1.1);
+    max-height:46vh;
+    overflow-y:auto;
   }
   @keyframes pin-card-slide-up{
     from{opacity:0; transform:translateY(16px);}
     to{opacity:1; transform:translateY(0);}
   }
-  #mobile-pin-card .ci-name{font-size:14px;}
-  #mobile-pin-card .ci-row{font-size:12px;}
-  #mobile-pin-card .ci-actions{margin-top:10px;}
+  #mobile-pin-card .ci-name{font-size:14px; margin-bottom:6px;}
+  #mobile-pin-card .ci-row{font-size:11.5px; margin:2px 0;}
+  #mobile-pin-card .ci-actions{margin-top:8px; gap:6px;}
+  #mobile-pin-card .ci-btn{padding:7px 6px; font-size:11.5px;}
+  #mobile-pin-card .ci-note-toggle{margin-top:7px; padding-top:6px; font-size:11px;}
+  #mobile-pin-card .ci-flag{font-size:10.5px; margin:3px 0;}
 
   ::-webkit-scrollbar{width:8px;}
   ::-webkit-scrollbar-thumb{background:#c3cdd8;border-radius:4px;}
@@ -2080,8 +2109,9 @@
     }
     #supervision-board-track{flex-shrink:1 !important; white-space:normal !important;}
     #supervision-board{
-      padding:6px 12px;
-      padding-top:calc(6px + env(safe-area-inset-top));
+      padding-bottom:6px;
+      padding-left:12px;
+      padding-right:12px;
       gap:6px;
     }
     #btn-supervision-add{display:none !important;}
@@ -2118,10 +2148,8 @@
       grid-template-columns:auto 1fr;
       grid-template-areas:
         "title actions"
-        "search search"
-        "filter1 filter2"
-        "filter3 filter3";
-      gap:8px 10px;
+        "search search";
+      gap:6px 10px;
     }
     header h1{font-size:14.5px;grid-area:title;align-self:center;}
     .stat-chip{display:none;}
@@ -2148,49 +2176,44 @@
       display:flex;
       gap:6px;
     }
-    #amount-filter-wrap{
-      grid-area:filter1;
-      justify-self:stretch;
+
+    /* 모바일: 필터(공사금액/동선택/즐겨찾기)를 헤더에서 빼서 지도 위에 떠있는 작은 칩으로 오버레이 */
+    #amount-filter-wrap, #dong-filter-wrap, #favorite-filter-btn{
+      position:fixed;
+      top:var(--mobile-filter-top, 100px);
+      z-index:21;
     }
-    #dong-filter-wrap{
-      grid-area:filter2;
-      justify-self:stretch;
+    #amount-filter-wrap{left:10px;}
+    #dong-filter-wrap{left:118px;}
+    #favorite-filter-btn{left:214px;}
+    #amount-filter-btn, #dong-filter-btn{
+      padding:6px 10px;
+      font-size:11.5px;
+      background:var(--panel);
+      color:var(--ink);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow-2);
     }
-    #dong-filter-btn{
-      width:100%;
-      justify-content:center;
-      padding:8px 10px;
-      font-size:12px;
+    #amount-filter-btn.active, #dong-filter-btn.active{
+      background:var(--gov-navy);
+      color:#fff;
+      border-color:var(--gov-navy);
     }
     #favorite-filter-btn{
-      grid-area:filter3;
-      justify-self:stretch;
-      width:100%;
-      text-align:center;
-      padding:8px 10px;
-      font-size:12px;
+      padding:6px 10px;
+      font-size:11.5px;
+      background:var(--panel);
+      color:var(--ink);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow-2);
     }
-    #amount-filter-btn{
-      width:100%;
-      justify-content:center;
-      padding:8px 10px;
-      font-size:12px;
-    }
-    #amount-filter-menu{
+    #amount-filter-menu, #dong-filter-menu{
       position:absolute;
       top:calc(100% + 6px);
       left:0;
-      right:0;
       width:auto;
-      min-width:0;
-    }
-    #dong-filter-menu{
-      position:absolute;
-      top:calc(100% + 6px);
-      left:0;
-      right:0;
-      width:auto;
-      min-width:0;
+      min-width:150px;
+      right:auto;
     }
 
     #main{position:relative;}
@@ -2204,24 +2227,36 @@
       border-top:1px solid var(--line);
       border-radius:var(--radius-lg) var(--radius-lg) 0 0;
       box-shadow:var(--shadow-2);
-      z-index:8;
+      z-index:50;
       transition:transform .28s cubic-bezier(.2,.8,.3,1);
       display:flex;
       flex-direction:column;
       height:78vh;
       transform:translateY(100%);
+      touch-action:pan-y;
     }
     #side-panel.sheet-open{transform:translateY(0);}
+    #side-panel.sheet-mini{transform:translateY(calc(78vh - 17vh));}
 
     #mobile-sheet-handle{
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:12px 16px;
+      flex-direction:column;
       flex-shrink:0;
       border-bottom:1px solid var(--line-soft);
+      touch-action:none;
     }
-    #mobile-sheet-handle span.bar{display:none;}
+    .sheet-drag-indicator{
+      width:36px; height:4px;
+      background:var(--line);
+      border-radius:3px;
+      margin:8px auto 4px;
+    }
+    #mobile-sheet-handle-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:4px 16px 10px;
+    }
     #mobile-sheet-label{
       font-size:13px;
       color:var(--ink);
@@ -2243,7 +2278,7 @@
       left:50%;
       bottom:16px;
       transform:translateX(-50%);
-      z-index:9;
+      z-index:51;
       padding:10px 22px;
       background:var(--gov-navy);
       color:#fff;
@@ -2446,8 +2481,11 @@
   </div>
   <div id="side-panel" class="sheet-collapsed">
     <div id="mobile-sheet-handle">
-      <span id="mobile-sheet-label">사업장 목록</span>
-      <button id="btn-list-close">닫기</button>
+      <span class="sheet-drag-indicator"></span>
+      <div id="mobile-sheet-handle-row">
+        <span id="mobile-sheet-label">사업장 목록</span>
+        <button id="btn-list-close">닫기</button>
+      </div>
     </div>
     <div id="side-list"></div>
   </div>
@@ -2937,6 +2975,15 @@ function svBadgeHtml(sv){
   return '<span class="sv-badge ' + sv.status + '">' + SV_STATUS_LABELS[sv.status] + '</span>';
 }
 
+/* 모바일에서 지도 위 필터칩(공사금액/동선택/즐겨찾기)이 헤더 바로 아래(상황판 유무와 무관하게)에 오도록 실제 헤더 높이를 측정해서 반영 */
+function updateMobileFilterTop(){
+  if(window.innerWidth > 760) return;
+  const header = document.getElementById('app-header');
+  if(!header) return;
+  const height = header.getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--mobile-filter-top', (height + 8) + 'px');
+}
+
 async function initSupervisionBoard(){
   const { data, error } = await sb.from('gnmap_supervisions')
     .select('*')
@@ -2946,13 +2993,17 @@ async function initSupervisionBoard(){
   if(error || !data || data.length === 0){
     SUPERVISIONS = [];
     board.style.display = 'none';
+    document.body.classList.remove('has-supervision-board');
     if(svRollTimer){ clearInterval(svRollTimer); svRollTimer = null; }
+    updateMobileFilterTop();
     return;
   }
   SUPERVISIONS = data;
   board.style.display = 'flex';
+  document.body.classList.add('has-supervision-board');
   svRollIndex = 0;
   renderSvBoardItem();
+  updateMobileFilterTop();
   if(svRollTimer) clearInterval(svRollTimer);
   if(SUPERVISIONS.length > 1){
     svRollTimer = setInterval(() => {
@@ -3877,6 +3928,8 @@ function initApp(){
   REVIEW = window.REVIEW;
 
   document.getElementById('review-count').textContent = REVIEW.length;
+  updateMobileFilterTop();
+  window.addEventListener('resize', updateMobileFilterTop);
 
   kakao.maps.load(function(){
     const container = document.getElementById('map');
@@ -3964,7 +4017,7 @@ function initApp(){
 
     buildMarkers();
     buildDongPolygons();
-    applyView();
+    applyView(true);
     attachHandlers();
     attachMobileSheet();
     attachAmountFilter();
@@ -4197,7 +4250,7 @@ function attachFavoriteFilter(){
 
 /* ===== 현재 상태(selectedDongs, amountFilteredSites)를 지도+목록에 반영 =====
    selectedDongs: Set() 비어있으면 전체, 비어있지 않으면 그 동들만 */
-function applyView(){
+function applyView(moveMap){
   const filtered = dongAndAmountFilteredSites();
   const countByDong = {};
   amountFilteredSites().forEach(s => {
@@ -4261,12 +4314,14 @@ function applyView(){
   activeMarkers.forEach(m => m.setMap(map));
   clusterer.addMarkers(activeMarkers);
 
-  if(activeMarkers.length > 0){
-    const bounds = new kakao.maps.LatLngBounds();
-    activeMarkers.forEach(m => bounds.extend(m.getPosition()));
-    map.setBounds(bounds, 30, 30, 30, 30);
-  }else if(baseBounds && !baseBounds.isEmpty()){
-    map.setBounds(baseBounds, 20, 20, 20, 20);
+  if(moveMap){
+    if(activeMarkers.length > 0){
+      const bounds = new kakao.maps.LatLngBounds();
+      activeMarkers.forEach(m => bounds.extend(m.getPosition()));
+      map.setBounds(bounds, 30, 30, 30, 30);
+    }else if(baseBounds && !baseBounds.isEmpty()){
+      map.setBounds(baseBounds, 20, 20, 20, 20);
+    }
   }
 
   document.getElementById('stat-total').textContent = filtered.length;
@@ -4346,7 +4401,7 @@ function renderActiveFilterBar(){
 }
 
 /* ===== 모바일 하단 시트 인터랙션 (2단계: 접힘/펼침 + 드래그) ===== */
-const SHEET_STATES = ['sheet-collapsed', 'sheet-open'];
+const SHEET_STATES = ['sheet-collapsed', 'sheet-mini', 'sheet-open'];
 
 function setSheetState(state){
   const panel = document.getElementById('side-panel');
@@ -4355,30 +4410,62 @@ function setSheetState(state){
   SHEET_STATES.forEach(s => panel.classList.remove(s));
   panel.classList.add(state);
   if(openBtn){
-    openBtn.textContent = (state === 'sheet-open') ? '✕ 닫기' : '☰ 목록보기';
-    openBtn.classList.toggle('is-open', state === 'sheet-open');
+    // 시트가 크게 열려있을 때는 플로팅 버튼을 숨기고, 시트 헤더 안의 "닫기" 버튼만으로 닫도록 함
+    // (z-index 경쟁으로 클릭이 씹히는 문제 방지). mini 상태는 목록 일부가 보이므로 버튼도 함께 노출
+    openBtn.style.display = (state === 'sheet-open') ? 'none' : 'flex';
+    openBtn.textContent = '☰ 목록보기';
+    openBtn.classList.remove('is-open');
   }
 }
 
 function attachMobileSheet(){
   const closeBtn = document.getElementById('btn-list-close');
   const openBtn = document.getElementById('btn-list-open');
+  const handle = document.getElementById('mobile-sheet-handle');
+  const panel = document.getElementById('side-panel');
 
   if(openBtn){
     openBtn.addEventListener('click', () => {
-      const panel = document.getElementById('side-panel');
       const isOpen = panel && panel.classList.contains('sheet-open');
       setSheetState(isOpen ? 'sheet-collapsed' : 'sheet-open');
     });
   }
   if(closeBtn) closeBtn.addEventListener('click', () => setSheetState('sheet-collapsed'));
 
-  // 사업장 클릭 시: 목록을 닫아서 지도가 바로 보이게
-  document.getElementById('side-list').addEventListener('click', (e) => {
-    if(window.innerWidth <= 760 && e.target.closest('.site-item')){
-      setSheetState('sheet-collapsed');
-    }
-  });
+  // 손잡이(핸들)를 터치해서 아래로 끌면 시트를 접음
+  if(handle && panel){
+    let touchStartY = null;
+    let dragging = false;
+
+    handle.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      dragging = true;
+      panel.style.transition = 'none';
+    }, {passive:true});
+
+    handle.addEventListener('touchmove', (e) => {
+      if(!dragging || touchStartY === null) return;
+      const deltaY = e.touches[0].clientY - touchStartY;
+      if(deltaY > 0){
+        panel.style.transform = `translateY(${deltaY}px)`;
+      }
+    }, {passive:true});
+
+    handle.addEventListener('touchend', (e) => {
+      if(!dragging) return;
+      dragging = false;
+      panel.style.transition = '';
+      panel.style.transform = '';
+      const deltaY = (e.changedTouches[0].clientY - touchStartY);
+      touchStartY = null;
+      // 80px 이상 아래로 끌었으면 접힘으로 판단
+      if(deltaY > 80){
+        setSheetState('sheet-collapsed');
+      }
+    });
+  }
+
+
 }
 
 
@@ -4477,6 +4564,13 @@ function renderSitesList(listEl, filterText){
     !(sortMode === 'distance' && !myLocation);
 
   if(isFlatSort){
+    // 동 필터가 걸려있으면 정렬 모드에서도 어떤 동인지 안내
+    if(selectedDongs.size > 0){
+      const dongNote = document.createElement('div');
+      dongNote.id = 'flat-sort-dong-note';
+      dongNote.textContent = [...selectedDongs].join(', ') + ' · ' + filtered.length + '건';
+      frag.appendChild(dongNote);
+    }
     // 그룹 없이 하나의 리스트로 정렬
     if(sortMode === 'distance'){
       filtered.sort((a,b) => a._dist - b._dist);
@@ -4559,10 +4653,12 @@ function buildSiteItemEl(s, showDongTag){
   const distHtml = (myLocation && s._dist !== undefined)
     ? '<div class="sdist">📍 ' + formatDistance(s._dist) + (showDongTag ? ' · ' + escapeHtml(s.sd || s.d) : '') + '</div>'
     : '';
+  const periodText = (s.s || s.e) ? (escapeHtml(s.s || '?') + ' ~ ' + escapeHtml(s.e || '?')) : '';
   div.innerHTML =
     '<div class="sname"><span class="sfav-toggle' + (isFav ? ' is-fav' : '') + '" data-site-id="' + s.id + '">' + (isFav ? '★' : '☆') + '</span>' + escapeHtml(s.n) + (s.ap ? '<span class="sflag">정확도낮음</span>' : '') + '</div>' +
     '<div class="saddr">' + escapeHtml(s.p) + '</div>' +
     '<div class="saddr">' + escapeHtml(s.a) + '</div>' +
+    (periodText ? '<div class="speriod">📅 ' + periodText + '</div>' : '') +
     '<div class="samount" title="' + (Number(s.m)||0).toLocaleString('ko-KR') + '원">' + formatAmount(s.m) + '</div>' +
     distHtml;
   div.addEventListener('click', () => {
@@ -4735,13 +4831,19 @@ function selectSite(idx, moveMap){
   const mobileCard = document.getElementById('mobile-pin-card');
   const isMobile = window.innerWidth <= 760;
 
+  const periodText = (s.s || s.e) ? (escapeHtml(s.s || '?') + ' ~ ' + escapeHtml(s.e || '?')) : '정보없음';
+  const extraStatsHtml =
+    ((s.acc !== null && s.acc !== undefined) || (s.sup !== null && s.sup !== undefined))
+      ? '<div class="ci-row"><b>산재조사표</b> ' + (s.acc ?? '-') + '건 &nbsp; <b>지도감독</b> ' + (s.sup ?? '-') + '건</div>'
+      : '';
   const infoHtml =
     '<div class="ci-close" id="ci-close-btn">&times;</div>' +
     '<div class="ci-name">' + escapeHtml(s.n) + '<span class="ci-fav-btn" id="ci-fav-btn" data-fav="' + (FAVORITE_SITE_IDS.has(s.id) ? '1' : '0') + '">' + (FAVORITE_SITE_IDS.has(s.id) ? '★' : '☆') + '</span></div>' +
     '<div class="ci-row"><b>업체</b> ' + escapeHtml(s.p) + '</div>' +
     '<div class="ci-row"><b>주소</b> ' + escapeHtml(s.a) + '</div>' +
-    '<div class="ci-row"><b>공사기간</b> ' + escapeHtml(s.s) + ' ~ ' + escapeHtml(s.e) + '</div>' +
+    '<div class="ci-row"><b>공사기간</b> ' + periodText + '</div>' +
     '<div class="ci-row"><b>공사금액</b> ' + formatAmount(s.m) + '</div>' +
+    extraStatsHtml +
     (s.ap ? '<div class="ci-flag">좌표 정확도 낮음(참고용)</div>' : '') +
     '<div class="ci-actions">' +
       '<button class="ci-btn ci-btn-primary" id="ci-nav-btn"><span class="ci-btn-icon">🧭</span>길찾기</button>' +
@@ -4797,7 +4899,7 @@ function selectSite(idx, moveMap){
   if(moveMap){
     map.setLevel(4);
     if(window.innerWidth <= 760){
-      setSheetState('sheet-collapsed');
+      setSheetState('sheet-mini');
       const proj = map.getProjection();
       map.setCenter(pos);
       const sheetPanel = document.getElementById('side-panel');
@@ -4878,7 +4980,13 @@ function copyAddress(address, btnEl){
 
 /* 모바일(Web Share API 지원 기기)은 공유 시트, 아니면 클립보드 복사로 대체 */
 function shareSite(s, btnEl){
-  const shareText = `[${s.n}]\n${s.a || ''}`;
+  const periodText = (s.s || s.e) ? `${s.s || '?'} ~ ${s.e || '?'}` : '정보없음';
+  const shareText =
+    `[${s.n}]\n` +
+    `업체: ${s.p || '-'}\n` +
+    `주소: ${s.a || '-'}\n` +
+    `공사기간: ${periodText}\n` +
+    `공사금액: ${formatAmount(s.m)}`;
   if(navigator.share){
     navigator.share({ title: s.n, text: shareText }).catch(() => {});
   }else{
