@@ -1944,13 +1944,14 @@
     border-radius:12px;
     box-shadow:var(--shadow-3);
     padding:16px 18px;
-    min-width:260px;
-    max-width:310px;
+    width:280px;
+    max-width:80vw;
     font-size:13px;
     line-height:1.6;
     position:relative;
     border-top:3px solid var(--gov-navy);
     animation:info-pop-in .18s cubic-bezier(.2,.9,.3,1.1);
+    box-sizing:border-box;
   }
   @keyframes info-pop-in{
     from{opacity:0; transform:translateY(6px) scale(.97);}
@@ -4235,6 +4236,9 @@ function attachDongFilter(){
     menu.classList.remove('open');
     applyView();
   });
+
+  // 초기 상태(선택된 동 없음 = "전체"가 체크된 상태)를 화면에 정확히 반영
+  syncDongFilterUI();
 }
 
 function attachFavoriteFilter(){
@@ -5093,6 +5097,9 @@ function attachAmountFilter(){
     menu.classList.remove('open');
     applyView();
   });
+
+  // 초기 상태(선택된 금액 구간 없음 = "전체"가 체크된 상태)를 화면에 정확히 반영
+  syncAmountFilterUI();
 }
 
 /* ===== 내 위치 ===== */
