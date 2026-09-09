@@ -440,8 +440,15 @@
   .theme-switch{
     display:inline-flex;
     align-items:center;
+    gap:6px;
     cursor:pointer;
     margin-right:6px;
+  }
+  .theme-switch-label{
+    font-size:11px;
+    font-weight:600;
+    color:#cfe0f5;
+    white-space:nowrap;
   }
   .theme-switch input{
     position:absolute;
@@ -795,6 +802,11 @@
   }
   #btn-clear-selection:hover{background:rgba(255,255,255,.16);}
   #btn-clear-selection:active{background:rgba(255,255,255,.22);}
+  #btn-clear-selection.active{
+    background:#fff;
+    color:var(--gov-navy);
+    border-color:#fff;
+  }
 
   #search-box{
     flex:1;
@@ -973,6 +985,23 @@
   }
   .dong-head.is-all-option:not(.is-active-dong):hover{
     background:var(--gov-blue-light);
+  }
+  .cnt-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:26px;
+    height:26px;
+    padding:0 7px;
+    border-radius:999px;
+    background:var(--gov-navy);
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+  }
+  .dong-head.is-all-option.is-active-dong .cnt-badge{
+    background:#fff;
+    color:var(--gov-navy);
   }
   .dong-head.fav-group-head{
     background:#fff9ec;
@@ -1901,6 +1930,7 @@
     <div class="gov-mark">GOV</div>
     <span>고용노동부 강남지청</span>
     <label class="theme-switch" id="gate-theme-switch">
+      <span class="theme-switch-label">다크모드</span>
       <input type="checkbox" id="gate-theme-checkbox">
       <span class="theme-switch-track"><span class="theme-switch-thumb"></span></span>
     </label>
@@ -1951,6 +1981,7 @@
     <button id="btn-admin-upload" style="display:none">엑셀 업로드</button>
     <button id="btn-admin-users" style="display:none">관리자 설정</button>
     <label class="theme-switch" title="다크모드 전환">
+      <span class="theme-switch-label">다크모드</span>
       <input type="checkbox" id="theme-checkbox">
       <span class="theme-switch-track"><span class="theme-switch-thumb"></span></span>
     </label>
@@ -1965,7 +1996,7 @@
       <input type="text" id="search-input" placeholder="사업장명, 주소, 업체명으로 검색" autocomplete="off">
       <div id="search-suggest" style="display:none"></div>
     </div>
-    <button id="btn-clear-selection">전체지도보기</button>
+    <button id="btn-clear-selection">전체 사업장 개소</button>
     <div id="tab-btn-group">
       <button class="toolbar-btn active" id="btn-tab-sites">사업장</button>
       <button class="toolbar-btn" id="btn-tab-review">확인필요(<span id="review-count">-</span>)</button>
@@ -3048,6 +3079,7 @@ let currentInfo = null;
 let activeTab = 'sites';
 let CONFIRMED, REVIEW;
 let selectedDongs = new Set();   // 다중선택된 행정동 필터 (비어있으면 전체)
+let showDongLabels = false;      // '전체 사업장 개소' 토글 - 켜면 지도 위 동이름+개소 라벨 표시
 // 다중선택 금액 구간: 빈 Set = 전체(필터 없음). 각 원소는 {min,max} 구간의 key
 const AMOUNT_RANGES = {
   A: {min:0, max:500000000},
@@ -3080,8 +3112,8 @@ function initApp(){
   kakao.maps.load(function(){
     const container = document.getElementById('map');
     const options = {
-      center: new kakao.maps.LatLng(37.4979, 127.0492),
-      level: 8
+      center: new kakao.maps.LatLng(37.4885, 127.0577),
+      level: 7
     };
     map = new kakao.maps.Map(container, options);
     map.setMaxLevel(11);
@@ -3431,7 +3463,7 @@ function applyView(){
 
     const overlay = dongLabelOverlays[dongName];
     if(overlay){
-      overlay.setMap(map);
+      overlay.setMap(showDongLabels ? map : null);
       const content = overlay.getContent();
       const el = (typeof content === 'string') ? null : content;
       if(el){
@@ -3608,7 +3640,7 @@ function renderSitesList(listEl, filterText){
   allHead.className = 'dong-head is-all-option' + (isAllActive ? ' is-active-dong' : '');
   allHead.innerHTML =
     '<span class="dong-head-name">' + (isAllActive ? '<span class="active-dot"></span>' : '') + '전체보기' + '</span>' +
-    '<span><span class="cnt">' + totalCntForAll + '건</span></span>';
+    '<span class="cnt-badge">' + totalCntForAll + '</span>';
   allHead.addEventListener('click', () => {
     showAllPins();
   });
@@ -4241,7 +4273,9 @@ function attachHandlers(){
     renderSideList();
   });
   document.getElementById('btn-clear-selection').addEventListener('click', () => {
-    clearSelection();
+    showDongLabels = !showDongLabels;
+    document.getElementById('btn-clear-selection').classList.toggle('active', showDongLabels);
+    applyView();
   });
 
   const logoutBtn = document.getElementById('btn-logout');
