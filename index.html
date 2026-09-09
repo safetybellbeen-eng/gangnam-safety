@@ -83,6 +83,13 @@
     opacity:.85;
   }
   button:disabled{cursor:default; opacity:.5;}
+  /* 버튼/탭 등 클릭 요소 텍스트는 항상 한 줄로 (좁은 화면에서 글자 단위 줄바꿈 방지) */
+  button, .dong-head-name, .admin-modal-tab, .gate-mode-tab,
+  .amount-opt, .suggest-item, .filter-chip, .cnt-badge, .filter-count-badge,
+  .sv-badge, .user-row-badge, .history-row-file,
+  #filter-chip-clear-all, #data-update-refresh{
+    white-space:nowrap;
+  }
   body{
     font-family:"Pretendard","Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
     background:var(--bg);
@@ -164,7 +171,7 @@
   }
   #gate-emblem svg{width:24px;height:24px;}
   #gate-agency-label{
-    font-size:10.5px;
+    font-size:11.5px;
     font-weight:700;
     color:var(--gov-blue);
     letter-spacing:.3px;
@@ -288,7 +295,7 @@
     margin-top:20px;
     padding-top:16px;
     border-top:1px solid var(--line-soft);
-    font-size:10.5px;
+    font-size:11px;
     color:#9aa7b4;
     line-height:1.6;
   }
@@ -923,12 +930,13 @@
     font-size:10.5px;
     font-weight:700;
     width:fit-content;
+    white-space:nowrap;
   }
   .user-row-badge.pending{background:#fff4e0; color:#a86a00;}
   .user-row-badge.approved{background:var(--gov-blue-light); color:var(--gov-blue);}
   .user-row-badge.admin{background:var(--gov-navy); color:#fff;}
   .user-row-badge.locked{background:var(--danger-soft); color:var(--danger);}
-  .user-row-lastlogin{font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
+  .user-row-lastlogin{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
   .user-row-actions{display:flex; gap:6px; flex-shrink:0;}
   .user-row-actions button{
     padding:7px 11px;
@@ -1572,7 +1580,7 @@
     border:1px solid var(--line);
     border-radius:10px;
     padding:10px 14px;
-    font-size:11.5px;
+    font-size:12px;
     color:var(--ink-soft);
     box-shadow:var(--shadow-2);
     z-index:3;
@@ -2065,6 +2073,12 @@
 
   @media (max-width: 760px){
     #btn-admin-upload{display:none !important;}
+    /* 헤더 계열 flex 컨테이너의 직계 자식은 예외 없이 찌그러지지 않도록 강제 (텍스트 세로 줄바꿈 방지) */
+    #supervision-board > *, #header-top > *{
+      flex-shrink:0;
+      white-space:nowrap;
+    }
+    #supervision-board-track{flex-shrink:1 !important; white-space:normal !important;}
     #supervision-board{
       padding:6px 12px;
       padding-top:calc(6px + env(safe-area-inset-top));
