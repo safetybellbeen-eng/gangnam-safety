@@ -694,6 +694,136 @@
     z-index:300;
     padding:20px;
   }
+  #supervision-modal{
+    position:fixed; inset:0;
+    background:rgba(11,25,43,.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:300;
+    padding:20px;
+  }
+  #supervision-modal-box{
+    background:var(--panel);
+    border-radius:var(--radius-lg);
+    padding:22px 22px 18px;
+    max-width:480px;
+    width:100%;
+    max-height:85vh;
+    display:flex;
+    flex-direction:column;
+  }
+  #supervision-modal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+    flex-shrink:0;
+  }
+  #supervision-modal-head h3{font-size:16px; color:var(--gov-navy);}
+  #btn-supervision-cancel{
+    padding:6px 14px;
+    background:var(--gov-blue-light);
+    color:var(--ink);
+    border:none;
+    border-radius:7px;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  #btn-supervision-new{
+    width:100%;
+    padding:10px 0;
+    margin-bottom:12px;
+    background:var(--gov-navy);
+    color:#fff;
+    border:none;
+    border-radius:var(--radius-sm);
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  #supervision-form{
+    padding:14px;
+    margin-bottom:12px;
+    background:var(--bg);
+    border-radius:var(--radius-md);
+    flex-shrink:0;
+  }
+  #supervision-form label{
+    display:block;
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin:9px 0 4px;
+  }
+  #supervision-form label:first-child{margin-top:0;}
+  #supervision-form input, #supervision-form select{
+    width:100%;
+    padding:8px 10px;
+    border:1.5px solid var(--line);
+    border-radius:7px;
+    font-size:12.5px;
+    background:var(--panel);
+    color:var(--ink);
+    font-family:inherit;
+  }
+  #sv-date-row{
+    display:flex;
+    gap:10px;
+  }
+  #sv-date-row > div{flex:1;}
+  #sv-form-actions{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+  }
+  #sv-form-actions button{
+    flex:1;
+    padding:9px 0;
+    border-radius:var(--radius-sm);
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+    border:none;
+  }
+  #btn-sv-form-cancel{background:var(--panel); color:var(--ink); border:1px solid var(--line) !important;}
+  #btn-sv-form-save{background:var(--gov-navy); color:#fff;}
+  #supervision-list{
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .sv-row{
+    padding:11px 13px;
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+  .sv-row-top{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:5px;
+  }
+  .sv-row-title{font-size:13.5px; font-weight:700; color:var(--ink); flex:1; min-width:0;}
+  .sv-row-detail{font-size:11.5px; color:var(--ink-soft);}
+  .sv-row-actions{
+    display:flex;
+    gap:6px;
+    margin-top:8px;
+  }
+  .sv-row-actions button{
+    padding:5px 10px;
+    border:none;
+    border-radius:6px;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .sv-edit-btn{background:var(--gov-blue-light); color:var(--gov-blue);}
+  .sv-delete-btn{background:var(--danger-soft); color:var(--danger);}
   #users-modal-box{
     background:var(--panel);
     border-radius:var(--radius-lg);
@@ -825,6 +955,75 @@
     flex-shrink:0;
     z-index:20;
   }
+
+  /* ===== 감독점검 상황판 (전광판) ===== */
+  #supervision-board{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:7px 24px;
+    background:var(--gov-navy-dark);
+    border-bottom:1px solid rgba(255,255,255,.1);
+  }
+  #supervision-board-icon{
+    font-size:9px;
+    animation:sv-blink 1.4s ease-in-out infinite;
+    flex-shrink:0;
+  }
+  @keyframes sv-blink{
+    0%, 100%{opacity:1;}
+    50%{opacity:.3;}
+  }
+  #supervision-board-track{
+    flex:1;
+    min-width:0;
+    height:20px;
+    position:relative;
+    overflow:hidden;
+  }
+  #supervision-board-item{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:#e4ecf6;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    animation:sv-fade-cycle 6s ease-in-out infinite;
+  }
+  @keyframes sv-fade-cycle{
+    0%, 4%{opacity:0; transform:translateY(6px);}
+    8%, 92%{opacity:1; transform:translateY(0);}
+    96%, 100%{opacity:0; transform:translateY(-6px);}
+  }
+  .sv-badge{
+    flex-shrink:0;
+    padding:2px 8px;
+    border-radius:999px;
+    font-size:10px;
+    font-weight:700;
+  }
+  .sv-badge.scheduled{background:rgba(255,255,255,.15); color:#e4ecf6;}
+  .sv-badge.ongoing{background:#ffd166; color:#6b4a00;}
+  .sv-badge.done{background:rgba(255,255,255,.08); color:#9aa7b4;}
+  .sv-badge.urgent{background:var(--danger); color:#fff;}
+  #btn-supervision-all, #btn-supervision-add{
+    padding:4px 11px;
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:6px;
+    font-size:11px;
+    font-weight:600;
+    cursor:pointer;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  #btn-supervision-all:hover, #btn-supervision-add:hover{background:rgba(255,255,255,.2);}
+
   #header-top{
     padding:9px 24px;
     padding-top:calc(9px + env(safe-area-inset-top));
@@ -1742,6 +1941,16 @@
     vertical-align:-1px;
   }
   .sfav-mark{color:#d4a017; margin-right:4px;}
+  .sfav-toggle{
+    display:inline-flex;
+    color:#c3cdd8;
+    margin-right:5px;
+    cursor:pointer;
+    font-size:14px;
+    vertical-align:-1px;
+  }
+  .sfav-toggle.is-fav{color:#d4a017;}
+  .sfav-toggle:hover{color:#d4a017;}
 
   .ci-note-toggle{
     margin-top:10px;
@@ -1856,9 +2065,15 @@
 
   @media (max-width: 760px){
     #btn-admin-upload{display:none !important;}
+    #supervision-board{
+      padding:6px 12px;
+      padding-top:calc(6px + env(safe-area-inset-top));
+      gap:6px;
+    }
+    #btn-supervision-add{display:none !important;}
+    #supervision-board-item{font-size:11px;}
     #header-top{
       padding:7px 12px;
-      padding-top:calc(7px + env(safe-area-inset-top));
       font-size:10px;
       flex-wrap:nowrap;
       gap:6px;
@@ -2123,6 +2338,14 @@
 </div>
 
 <header style="display:none" id="app-header">
+  <div id="supervision-board" style="display:none">
+    <span id="supervision-board-icon">🔴</span>
+    <div id="supervision-board-track">
+      <div id="supervision-board-item"></div>
+    </div>
+    <button id="btn-supervision-all">전체보기</button>
+    <button id="btn-supervision-add" style="display:none">+ 등록</button>
+  </div>
   <div id="header-top">
     <div class="gov-mark">GOV</div>
     <span>고용노동부 강남지청 · 산재예방감독과</span>
@@ -2256,6 +2479,44 @@
     </div>
     <div id="users-list"></div>
     <div id="upload-history-list" style="display:none"></div>
+  </div>
+</div>
+
+<!-- 감독점검 상황판 전체보기/등록 모달 -->
+<div id="supervision-modal" style="display:none">
+  <div id="supervision-modal-box">
+    <div id="supervision-modal-head">
+      <h3>감독점검 상황판</h3>
+      <button id="btn-supervision-cancel">닫기</button>
+    </div>
+    <button id="btn-supervision-new" style="display:none">+ 새 감독점검 등록</button>
+    <div id="supervision-form" style="display:none">
+      <label>감독명</label>
+      <input type="text" id="sv-title" placeholder="예: 2026년 하반기 정기감독">
+      <label>담당자</label>
+      <input type="text" id="sv-manager" placeholder="예: 홍길동 감독관">
+      <div id="sv-date-row">
+        <div>
+          <label>시작일</label>
+          <input type="date" id="sv-start">
+        </div>
+        <div>
+          <label>종료일</label>
+          <input type="date" id="sv-end">
+        </div>
+      </div>
+      <label>진행상태</label>
+      <select id="sv-status">
+        <option value="scheduled">예정</option>
+        <option value="ongoing">진행중</option>
+        <option value="done">완료</option>
+      </select>
+      <div id="sv-form-actions">
+        <button id="btn-sv-form-cancel">취소</button>
+        <button id="btn-sv-form-save">저장</button>
+      </div>
+    </div>
+    <div id="supervision-list"></div>
   </div>
 </div>
 
@@ -2598,12 +2859,15 @@ async function enterApp(){
   if(CURRENT_PROFILE && CURRENT_PROFILE.role === 'admin'){
     document.getElementById('btn-admin-upload').style.display = 'inline-block';
     document.getElementById('btn-admin-users').style.display = 'inline-block';
+    document.getElementById('btn-supervision-add').style.display = 'inline-block';
+    document.getElementById('btn-supervision-new').style.display = 'block';
   }
   renderListSkeleton();
   await loadSitesFromSupabase();
   await loadFavorites();
   initApp();
   subscribeToSiteUpdates();
+  initSupervisionBoard();
   if(!localStorage.getItem('gnmap_onboarding_seen')){
     openOnboarding();
   }
@@ -2631,6 +2895,192 @@ function showUpdateBanner(){
   document.body.appendChild(banner);
   document.getElementById('data-update-refresh').addEventListener('click', () => {
     window.location.reload();
+  });
+}
+
+/* ============================================================
+   감독점검 상황판 (전광판 롤링 표시)
+   ============================================================ */
+const SV_STATUS_LABELS = { scheduled: '예정', ongoing: '진행중', done: '완료' };
+let SUPERVISIONS = [];
+let svRollTimer = null;
+let svRollIndex = 0;
+let svEditingId = null;
+
+function daysUntil(dateStr){
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const target = new Date(dateStr);
+  target.setHours(0,0,0,0);
+  return Math.round((target - today) / 86400000);
+}
+
+function svBadgeHtml(sv){
+  const dLeft = daysUntil(sv.end_date);
+  if(sv.status !== 'done' && dLeft >= 0 && dLeft <= 3){
+    return '<span class="sv-badge urgent">기한임박 D-' + dLeft + '</span>';
+  }
+  return '<span class="sv-badge ' + sv.status + '">' + SV_STATUS_LABELS[sv.status] + '</span>';
+}
+
+async function initSupervisionBoard(){
+  const { data, error } = await sb.from('gnmap_supervisions')
+    .select('*')
+    .neq('status', 'done')
+    .order('start_date');
+  const board = document.getElementById('supervision-board');
+  if(error || !data || data.length === 0){
+    SUPERVISIONS = [];
+    board.style.display = 'none';
+    if(svRollTimer){ clearInterval(svRollTimer); svRollTimer = null; }
+    return;
+  }
+  SUPERVISIONS = data;
+  board.style.display = 'flex';
+  svRollIndex = 0;
+  renderSvBoardItem();
+  if(svRollTimer) clearInterval(svRollTimer);
+  if(SUPERVISIONS.length > 1){
+    svRollTimer = setInterval(() => {
+      svRollIndex = (svRollIndex + 1) % SUPERVISIONS.length;
+      renderSvBoardItem();
+    }, 6000);
+  }
+}
+
+function renderSvBoardItem(){
+  const el = document.getElementById('supervision-board-item');
+  const sv = SUPERVISIONS[svRollIndex];
+  if(!sv) return;
+  // CSS 애니메이션 재시작을 위해 강제 리플로우
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = '';
+  el.innerHTML =
+    svBadgeHtml(sv) +
+    '<b>' + escapeHtml(sv.title) + '</b>' +
+    '<span style="opacity:.8">' + escapeHtml(sv.start_date) + ' ~ ' + escapeHtml(sv.end_date) + '</span>' +
+    (sv.manager_name ? '<span style="opacity:.7">· ' + escapeHtml(sv.manager_name) + '</span>' : '');
+}
+
+document.getElementById('btn-supervision-all').addEventListener('click', () => {
+  openSupervisionModal();
+});
+document.getElementById('btn-supervision-add').addEventListener('click', () => {
+  openSupervisionModal();
+  showSvForm();
+});
+document.getElementById('btn-supervision-cancel').addEventListener('click', () => {
+  document.getElementById('supervision-modal').style.display = 'none';
+  hideSvForm();
+});
+document.getElementById('btn-supervision-new').addEventListener('click', () => showSvForm());
+document.getElementById('btn-sv-form-cancel').addEventListener('click', () => hideSvForm());
+
+function openSupervisionModal(){
+  document.getElementById('supervision-modal').style.display = 'flex';
+  loadSupervisionFullList();
+}
+
+function showSvForm(sv){
+  svEditingId = sv ? sv.id : null;
+  document.getElementById('sv-title').value = sv ? sv.title : '';
+  document.getElementById('sv-manager').value = sv ? (sv.manager_name || '') : '';
+  document.getElementById('sv-start').value = sv ? sv.start_date : '';
+  document.getElementById('sv-end').value = sv ? sv.end_date : '';
+  document.getElementById('sv-status').value = sv ? sv.status : 'scheduled';
+  document.getElementById('supervision-form').style.display = 'block';
+}
+function hideSvForm(){
+  svEditingId = null;
+  document.getElementById('supervision-form').style.display = 'none';
+}
+
+document.getElementById('btn-sv-form-save').addEventListener('click', async () => {
+  const title = document.getElementById('sv-title').value.trim();
+  const manager = document.getElementById('sv-manager').value.trim();
+  const start = document.getElementById('sv-start').value;
+  const end = document.getElementById('sv-end').value;
+  const status = document.getElementById('sv-status').value;
+
+  if(!title || !start || !end){
+    showToast('감독명과 기간을 입력해주세요.', 'error');
+    return;
+  }
+  if(end < start){
+    showToast('종료일이 시작일보다 빠를 수 없습니다.', 'error');
+    return;
+  }
+
+  const payload = {
+    title, manager_name: manager || null,
+    start_date: start, end_date: end, status,
+    updated_at: new Date().toISOString()
+  };
+
+  let error;
+  if(svEditingId){
+    ({ error } = await sb.from('gnmap_supervisions').update(payload).eq('id', svEditingId));
+  }else{
+    payload.created_by = CURRENT_PROFILE ? CURRENT_PROFILE.id : null;
+    ({ error } = await sb.from('gnmap_supervisions').insert(payload));
+  }
+
+  if(error){
+    showToast('저장 중 오류: ' + friendlyError(error), 'error');
+    return;
+  }
+  showToast(svEditingId ? '수정되었습니다.' : '등록되었습니다.', 'success');
+  hideSvForm();
+  await loadSupervisionFullList();
+  await initSupervisionBoard();
+});
+
+async function loadSupervisionFullList(){
+  const listEl = document.getElementById('supervision-list');
+  listEl.innerHTML = '<div id="users-empty-msg">불러오는 중...</div>';
+
+  const { data, error } = await sb.from('gnmap_supervisions').select('*').order('start_date', { ascending: false });
+  if(error){
+    listEl.innerHTML = '<div id="users-empty-msg">목록을 불러오지 못했습니다: ' + friendlyError(error) + '</div>';
+    return;
+  }
+  if(!data || !data.length){
+    listEl.innerHTML = '<div id="users-empty-msg">등록된 감독점검이 없습니다.</div>';
+    return;
+  }
+
+  const isAdmin = CURRENT_PROFILE && CURRENT_PROFILE.role === 'admin';
+  listEl.innerHTML = '';
+  data.forEach(sv => {
+    const row = document.createElement('div');
+    row.className = 'sv-row';
+    row.innerHTML =
+      '<div class="sv-row-top">' +
+        svBadgeHtml(sv) +
+        '<span class="sv-row-title">' + escapeHtml(sv.title) + '</span>' +
+      '</div>' +
+      '<div class="sv-row-detail">' + escapeHtml(sv.start_date) + ' ~ ' + escapeHtml(sv.end_date) +
+        (sv.manager_name ? ' · ' + escapeHtml(sv.manager_name) : '') +
+      '</div>' +
+      (isAdmin ? '<div class="sv-row-actions"><button class="sv-edit-btn">수정</button><button class="sv-delete-btn">삭제</button></div>' : '');
+
+    if(isAdmin){
+      row.querySelector('.sv-edit-btn').addEventListener('click', () => showSvForm(sv));
+      row.querySelector('.sv-delete-btn').addEventListener('click', async () => {
+        const ok = await showAppConfirm(`"${sv.title}" 감독점검을 삭제하시겠습니까?`, {danger:true, okLabel:'삭제'});
+        if(!ok) return;
+        const { error } = await sb.from('gnmap_supervisions').delete().eq('id', sv.id);
+        if(error){
+          showToast('삭제 중 오류: ' + friendlyError(error), 'error');
+          return;
+        }
+        showToast('삭제되었습니다.', 'success');
+        await loadSupervisionFullList();
+        await initSupervisionBoard();
+      });
+    }
+    listEl.appendChild(row);
   });
 }
 
@@ -3546,7 +3996,7 @@ function buildDongPolygons(){
         strokeOpacity: 0.8,
         strokeStyle: 'solid',
         fillColor: '#9aa7b4',
-        fillOpacity: 0.08
+        fillOpacity: 0
       });
       dongPolygons[dongName].push(polygon);
       path.forEach(p => { bounds.extend(p); thisDongBounds.extend(p); });
@@ -3751,17 +4201,17 @@ function applyView(){
     let fillColor, fillOpacity, strokeWeight, strokeColor;
     if(isSelected){
       fillColor = '#1866c8';
-      fillOpacity = Math.min(0.14 + cnt/110, 0.5);
+      fillOpacity = 0;
       strokeWeight = 3;
       strokeColor = '#0b3d6e';
     }else if(isDimmed){
       fillColor = cnt > 0 ? '#1866c8' : '#9aa7b4';
-      fillOpacity = cnt > 0 ? 0.08 : 0.04;
+      fillOpacity = 0;
       strokeWeight = 1.2;
       strokeColor = '#b8c2cc';
     }else{
       fillColor = cnt > 0 ? '#1866c8' : '#9aa7b4';
-      fillOpacity = cnt > 0 ? Math.min(0.14 + cnt/110, 0.5) : 0.07;
+      fillOpacity = 0;
       strokeWeight = 2;
       strokeColor = '#0b3d6e';
     }
@@ -4091,17 +4541,26 @@ function buildSiteItemEl(s, showDongTag){
   const div = document.createElement('div');
   div.className = 'site-item';
   div.dataset.idx = s._idx;
+  const isFav = FAVORITE_SITE_IDS.has(s.id);
   const distHtml = (myLocation && s._dist !== undefined)
     ? '<div class="sdist">📍 ' + formatDistance(s._dist) + (showDongTag ? ' · ' + escapeHtml(s.sd || s.d) : '') + '</div>'
     : '';
   div.innerHTML =
-    '<div class="sname">' + (FAVORITE_SITE_IDS.has(s.id) ? '<span class="sfav-mark">★</span>' : '') + escapeHtml(s.n) + (s.ap ? '<span class="sflag">정확도낮음</span>' : '') + '</div>' +
+    '<div class="sname"><span class="sfav-toggle' + (isFav ? ' is-fav' : '') + '" data-site-id="' + s.id + '">' + (isFav ? '★' : '☆') + '</span>' + escapeHtml(s.n) + (s.ap ? '<span class="sflag">정확도낮음</span>' : '') + '</div>' +
     '<div class="saddr">' + escapeHtml(s.p) + '</div>' +
     '<div class="saddr">' + escapeHtml(s.a) + '</div>' +
     '<div class="samount" title="' + (Number(s.m)||0).toLocaleString('ko-KR') + '원">' + formatAmount(s.m) + '</div>' +
     distHtml;
   div.addEventListener('click', () => {
     selectSite(s._idx, true);
+  });
+  const favToggle = div.querySelector('.sfav-toggle');
+  favToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleFavorite(s.id, null);
+    const nowFav = !favToggle.classList.contains('is-fav');
+    favToggle.classList.toggle('is-fav', nowFav);
+    favToggle.textContent = nowFav ? '★' : '☆';
   });
   return div;
 }
