@@ -609,6 +609,50 @@
     font-weight:700;
     cursor:pointer;
   }
+  #admin-modal-tabs{
+    display:flex;
+    gap:0;
+    margin-bottom:12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  .admin-modal-tab{
+    flex:1;
+    padding:9px 0;
+    background:var(--panel);
+    border:none;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .admin-modal-tab.active{
+    background:var(--gov-navy);
+    color:#fff;
+  }
+  #upload-history-list{
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .history-row{
+    padding:11px 13px;
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+  .history-row-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:4px;
+  }
+  .history-row-date{font-size:12px; font-weight:700; color:var(--ink);}
+  .history-row-by{font-size:11px; color:var(--ink-soft);}
+  .history-row-detail{font-size:11.5px; color:var(--ink-soft); line-height:1.5;}
+  .history-row-file{font-weight:600; color:var(--gov-blue);}
   #users-list{
     overflow-y:auto;
     display:flex;
@@ -2022,10 +2066,15 @@
 <div id="users-modal" style="display:none">
   <div id="users-modal-box">
     <div id="users-modal-head">
-      <h3>관리자 설정 · 회원 관리</h3>
+      <h3>관리자 설정</h3>
       <button id="btn-users-cancel">닫기</button>
     </div>
+    <div id="admin-modal-tabs">
+      <button class="admin-modal-tab active" data-tab="users">회원 관리</button>
+      <button class="admin-modal-tab" data-tab="history">업로드 이력</button>
+    </div>
     <div id="users-list"></div>
+    <div id="upload-history-list" style="display:none"></div>
   </div>
 </div>
 
@@ -2289,6 +2338,20 @@ async function loadFavorites(){
   const { data, error } = await sb.from('gnmap_favorites').select('site_id');
   if(error){ FAVORITE_SITE_IDS = new Set(); return; }
   FAVORITE_SITE_IDS = new Set((data || []).map(r => r.site_id));
+  updateAppBadge();
+}
+
+/* 모바일 홈화면 아이콘 배지 - 즐겨찾기 사업장 개수 표시 (Android Chrome 등 지원 기기에서만 동작) */
+function updateAppBadge(){
+  if(!('setAppBadge' in navigator)) return;
+  const count = FAVORITE_SITE_IDS.size;
+  try{
+    if(count > 0){
+      navigator.setAppBadge(count).catch(() => {});
+    }else{
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }catch(e){ /* 미지원 기기는 조용히 무시 */ }
 }
 
 async function toggleFavorite(siteId, btnEl){
@@ -2308,6 +2371,7 @@ async function toggleFavorite(siteId, btnEl){
     btnEl.textContent = nowFav ? '★' : '☆';
     btnEl.dataset.fav = nowFav ? '1' : '0';
   }
+  updateAppBadge();
   renderSideList();
 }
 
@@ -2492,6 +2556,7 @@ window.addEventListener('DOMContentLoaded', async () => {
    ============================================================ */
 let uploadParsedRows = null;   // 파싱+매핑 완료된 행 배열 (아직 업로드 전)
 let uploadDetectedForm = null; // 'form1' | 'form2'
+let uploadFileName = null;
 
 document.getElementById('btn-admin-upload').addEventListener('click', () => {
   document.getElementById('upload-modal').style.display = 'flex';
@@ -2501,6 +2566,7 @@ document.getElementById('btn-admin-upload').addEventListener('click', () => {
   document.getElementById('btn-upload-start').disabled = true;
   uploadParsedRows = null;
   uploadDetectedForm = null;
+  uploadFileName = null;
 });
 
 document.getElementById('btn-upload-cancel').addEventListener('click', () => {
@@ -2577,6 +2643,7 @@ document.getElementById('upload-file-input').addEventListener('change', async (e
   statusEl.textContent = '파일을 읽는 중...';
   startBtn.disabled = true;
   uploadParsedRows = null;
+  uploadFileName = file.name;
 
   try{
     const buf = await file.arrayBuffer();
@@ -2716,6 +2783,19 @@ document.getElementById('btn-upload-start').addEventListener('click', async () =
     statusEl.textContent = `업로드 완료! 총 ${rows.length}건 반영되었습니다.\n지도를 새로고침합니다...`;
     lastOwnUploadAt = Date.now();
 
+    // 업로드 히스토리 기록 (실패해도 업로드 자체는 이미 성공했으므로 조용히 무시)
+    const confirmedCnt = rows.filter(r => r.status === 'confirmed').length;
+    const reviewCnt = rows.length - confirmedCnt;
+    sb.from('gnmap_upload_history').insert({
+      uploaded_by: CURRENT_PROFILE ? CURRENT_PROFILE.id : null,
+      uploaded_by_name: CURRENT_PROFILE ? CURRENT_PROFILE.name : null,
+      file_name: uploadFileName,
+      source_form: uploadDetectedForm,
+      total_rows: rows.length,
+      confirmed_rows: confirmedCnt,
+      review_rows: reviewCnt
+    }).then(() => {});
+
     await loadSitesFromSupabase();
     initApp();
 
@@ -2774,12 +2854,60 @@ async function searchKakaoPlaces(query){
    ============================================================ */
 document.getElementById('btn-admin-users').addEventListener('click', () => {
   document.getElementById('users-modal').style.display = 'flex';
+  switchAdminTab('users');
   loadUsersList();
 });
 
 document.getElementById('btn-users-cancel').addEventListener('click', () => {
   document.getElementById('users-modal').style.display = 'none';
 });
+
+document.querySelectorAll('.admin-modal-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    switchAdminTab(tab.dataset.tab);
+    if(tab.dataset.tab === 'history') loadUploadHistory();
+  });
+});
+
+function switchAdminTab(tabName){
+  document.querySelectorAll('.admin-modal-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+  document.getElementById('users-list').style.display = (tabName === 'users') ? 'flex' : 'none';
+  document.getElementById('upload-history-list').style.display = (tabName === 'history') ? 'flex' : 'none';
+}
+
+async function loadUploadHistory(){
+  const listEl = document.getElementById('upload-history-list');
+  listEl.innerHTML = '<div id="users-empty-msg">불러오는 중...</div>';
+
+  const { data, error } = await sb.from('gnmap_upload_history').select('*').order('uploaded_at', { ascending: false }).limit(30);
+  if(error){
+    listEl.innerHTML = '<div id="users-empty-msg">이력을 불러오지 못했습니다: ' + escapeHtml(error.message) + '</div>';
+    return;
+  }
+  if(!data || !data.length){
+    listEl.innerHTML = '<div id="users-empty-msg">업로드 이력이 없습니다.</div>';
+    return;
+  }
+
+  const formLabelMap = { form1: '양식1(사업장 데이터베이스 검색)', form2: '양식2(사업장 리스트)', unknown: '알 수 없는 양식' };
+
+  listEl.innerHTML = '';
+  data.forEach(h => {
+    const row = document.createElement('div');
+    row.className = 'history-row';
+    const formLabel = formLabelMap[h.source_form] || h.source_form || '-';
+    row.innerHTML =
+      '<div class="history-row-top">' +
+        '<span class="history-row-date">' + escapeHtml(formatDateTime(h.uploaded_at)) + '</span>' +
+        '<span class="history-row-by">' + escapeHtml(h.uploaded_by_name || '알 수 없음') + '</span>' +
+      '</div>' +
+      '<div class="history-row-detail">' +
+        '<span class="history-row-file">' + escapeHtml(h.file_name || '(파일명 없음)') + '</span> · ' + escapeHtml(formLabel) + '<br>' +
+        '총 ' + h.total_rows + '건 (확정 ' + h.confirmed_rows + '건 · 확인필요 ' + h.review_rows + '건)' +
+      '</div>';
+    listEl.appendChild(row);
+  });
+}
 
 async function loadUsersList(){
   const listEl = document.getElementById('users-list');
@@ -4121,6 +4249,7 @@ function attachHandlers(){
     logoutBtn.addEventListener('click', async () => {
       if(confirm('로그아웃 하시겠습니까?')){
         try{ localStorage.removeItem(AUTO_LOGIN_KEY); }catch(e){}
+        if('clearAppBadge' in navigator){ navigator.clearAppBadge().catch(() => {}); }
         await sb.auth.signOut();
         window.location.reload();
       }
