@@ -69,6 +69,20 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;}
+
+  /* ===== 전역 클릭 피드백 통일 ===== */
+  button, .dong-head, .site-item, .suggest-item, .user-row, .history-row,
+  .filter-chip .chip-x, .amount-opt, .theme-switch, .admin-modal-tab,
+  .gate-mode-tab, .onboarding-dot, #favorite-filter-btn{
+    transition:transform .08s ease, opacity .08s ease, background .12s ease;
+  }
+  button:active:not(:disabled),
+  .dong-head:active, .site-item:active, .suggest-item:active,
+  .user-row-actions button:active, .amount-opt:active{
+    transform:scale(0.97);
+    opacity:.85;
+  }
+  button:disabled{cursor:default; opacity:.5;}
   body{
     font-family:"Pretendard","Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
     background:var(--bg);
@@ -188,6 +202,16 @@
     color:#1a2530;
   }
   #gate-box input:focus{border-color:var(--gov-blue);background:#fff;}
+  #gate-box input.input-error{
+    border-color:var(--danger);
+    background:var(--danger-soft);
+    animation:input-shake .3s ease;
+  }
+  @keyframes input-shake{
+    0%, 100%{transform:translateX(0);}
+    25%{transform:translateX(-4px);}
+    75%{transform:translateX(4px);}
+  }
   #gate-btn{
     width:100%;
     margin-top:22px;
@@ -549,6 +573,88 @@
     cursor:pointer;
   }
 
+  /* ===== 커스텀 확인/알림 모달 ===== */
+  #custom-confirm-modal{
+    position:fixed; inset:0;
+    background:rgba(11,25,43,.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:600;
+    padding:20px;
+  }
+  #custom-confirm-box{
+    background:var(--panel);
+    border-radius:var(--radius-lg);
+    padding:26px 24px 22px;
+    max-width:360px;
+    width:100%;
+    box-shadow:var(--shadow-3);
+    text-align:center;
+  }
+  #custom-confirm-icon{font-size:32px; margin-bottom:10px;}
+  #custom-confirm-msg{
+    font-size:13.5px;
+    color:var(--ink);
+    line-height:1.6;
+    white-space:pre-line;
+    margin-bottom:20px;
+  }
+  #custom-confirm-actions{
+    display:flex;
+    gap:8px;
+  }
+  #custom-confirm-actions button{
+    flex:1;
+    padding:10px 0;
+    border-radius:var(--radius-sm);
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    border:none;
+  }
+  #custom-confirm-cancel{background:var(--gov-blue-light); color:var(--ink);}
+  #custom-confirm-ok{background:var(--gov-navy); color:#fff;}
+  #custom-confirm-ok.danger{background:var(--danger);}
+  #custom-confirm-box.alert-only #custom-confirm-cancel{display:none;}
+
+  /* ===== 토스트 알림 ===== */
+  #toast-container{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:700;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    align-items:center;
+    pointer-events:none;
+  }
+  .toast-item{
+    background:var(--gov-navy-dark);
+    color:#fff;
+    padding:11px 20px;
+    border-radius:999px;
+    font-size:12.5px;
+    font-weight:600;
+    box-shadow:var(--shadow-3);
+    animation:toast-in .25s ease-out;
+    max-width:90vw;
+    text-align:center;
+  }
+  .toast-item.toast-error{background:var(--danger);}
+  .toast-item.toast-success{background:var(--ok);}
+  .toast-item.fade-out{animation:toast-out .25s ease-in forwards;}
+  @keyframes toast-in{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes toast-out{
+    from{opacity:1; transform:translateY(0);}
+    to{opacity:0; transform:translateY(10px);}
+  }
+
   #data-update-banner{
     position:fixed;
     top:16px; left:50%;
@@ -665,6 +771,7 @@
     display:flex;
     flex-direction:column;
     gap:8px;
+    transition:opacity .15s ease;
   }
   .user-row{
     display:flex;
@@ -816,13 +923,29 @@
   }
   #search-input{
     width:100%;
-    padding:8px 12px 8px 32px;
+    padding:8px 30px 8px 32px;
     border:none;
     border-radius:20px;
     font-size:13px;
     outline:none;
     background:rgba(255,255,255,.95);
   }
+  #search-clear-btn{
+    position:absolute;
+    right:10px; top:50%;
+    transform:translateY(-50%);
+    width:18px; height:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:rgba(0,0,0,.14);
+    color:#4a5666;
+    font-size:10px;
+    cursor:pointer;
+    z-index:2;
+  }
+  #search-clear-btn:hover{background:rgba(0,0,0,.22);}
   #search-box::before{
     content:'';
     position:absolute;
@@ -1198,6 +1321,9 @@
     width:100%;
     height:100%;
   }
+  html[data-theme="dark"] #map{
+    filter:brightness(.82) contrast(1.05) saturate(.85);
+  }
 
   #map-loading{
     position:absolute;
@@ -1472,6 +1598,19 @@
     border-color:#fff;
   }
   #dong-filter-btn .caret{font-size:9px;}
+  .filter-count-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:16px;
+    height:16px;
+    padding:0 4px;
+    border-radius:999px;
+    background:#ffd166;
+    color:#6b4a00;
+    font-size:10px;
+    font-weight:800;
+  }
   #favorite-filter-btn{
     padding:7px 13px;
     font-size:12px;
@@ -1582,6 +1721,11 @@
     line-height:1.6;
     position:relative;
     border-top:3px solid var(--gov-navy);
+    animation:info-pop-in .18s cubic-bezier(.2,.9,.3,1.1);
+  }
+  @keyframes info-pop-in{
+    from{opacity:0; transform:translateY(6px) scale(.97);}
+    to{opacity:1; transform:translateY(0) scale(1);}
   }
   .kakao-info .ci-name{
     font-size:15px;
@@ -1693,6 +1837,11 @@
     padding:14px 16px;
     z-index:15;
     border-top:3px solid var(--gov-navy);
+    animation:pin-card-slide-up .2s cubic-bezier(.2,.9,.3,1.1);
+  }
+  @keyframes pin-card-slide-up{
+    from{opacity:0; transform:translateY(16px);}
+    to{opacity:1; transform:translateY(0);}
   }
   #mobile-pin-card .ci-name{font-size:14px;}
   #mobile-pin-card .ci-row{font-size:12px;}
@@ -1749,7 +1898,7 @@
     .stat-chip{display:none;}
     #btn-clear-selection{display:none;}
     #search-box{grid-area:search;max-width:none;}
-    #search-input{font-size:16px;padding:9px 12px 9px 34px;} /* iOS 확대 방지 */
+    #search-input{font-size:16px;padding:9px 30px 9px 34px;} /* iOS 확대 방지 */
     #search-box::before{left:12px;}
     #search-box::after{left:21px;}
 
@@ -1994,6 +2143,7 @@
     <div class="stat-chip" id="header-stat"><b id="stat-total">-</b>건 표시중</div>
     <div id="search-box">
       <input type="text" id="search-input" placeholder="사업장명, 주소, 업체명으로 검색" autocomplete="off">
+      <span id="search-clear-btn" style="display:none">✕</span>
       <div id="search-suggest" style="display:none"></div>
     </div>
     <button id="btn-clear-selection">전체 사업장 개소</button>
@@ -2002,7 +2152,7 @@
       <button class="toolbar-btn" id="btn-tab-review">확인필요(<span id="review-count">-</span>)</button>
     </div>
     <div id="amount-filter-wrap">
-      <button id="amount-filter-btn"><span id="amount-filter-label">공사금액</span> <span class="caret">▼</span></button>
+      <button id="amount-filter-btn"><span id="amount-filter-label">공사금액</span> <span id="amount-filter-badge" class="filter-count-badge" style="display:none"></span> <span class="caret">▼</span></button>
       <div id="amount-filter-menu">
         <div class="amount-opt all-opt selected" data-key="ALL" data-min="0" data-max="">전체</div>
         <div class="amount-opt-sep"></div>
@@ -2018,7 +2168,7 @@
       </div>
     </div>
     <div id="dong-filter-wrap">
-      <button id="dong-filter-btn"><span id="dong-filter-label">동 선택</span> <span class="caret">▼</span></button>
+      <button id="dong-filter-btn"><span id="dong-filter-label">동 선택</span> <span id="dong-filter-badge" class="filter-count-badge" style="display:none"></span> <span class="caret">▼</span></button>
       <div id="dong-filter-menu">
         <div class="amount-opt all-opt selected" data-dong="ALL">전체</div>
         <div class="amount-opt-sep"></div>
@@ -2121,6 +2271,19 @@
   </div>
 </div>
 
+<!-- 커스텀 확인/알림 모달 -->
+<div id="custom-confirm-modal" style="display:none">
+  <div id="custom-confirm-box">
+    <div id="custom-confirm-icon">⚠️</div>
+    <div id="custom-confirm-msg"></div>
+    <div id="custom-confirm-actions">
+      <button id="custom-confirm-cancel">취소</button>
+      <button id="custom-confirm-ok">확인</button>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -2133,6 +2296,99 @@ const SUPABASE_ANON_KEY = "sb_publishable_eOUPEa1xtZP5FbOoEuiWUw_2M1_Q5c5";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const KAKAO_REST_KEY = "edeab0e071a237e4239eab9178cfc949";
+
+/* ============================================================
+   커스텀 알림/확인 모달 + 토스트 + 친화적 에러 메시지
+   ============================================================ */
+function showToast(message, type){
+  const container = document.getElementById('toast-container');
+  const item = document.createElement('div');
+  item.className = 'toast-item' + (type ? ' toast-' + type : '');
+  item.textContent = message;
+  container.appendChild(item);
+  setTimeout(() => {
+    item.classList.add('fade-out');
+    setTimeout(() => item.remove(), 250);
+  }, 2600);
+}
+
+function showAppAlert(message, opts){
+  opts = opts || {};
+  return new Promise((resolve) => {
+    const modal = document.getElementById('custom-confirm-modal');
+    const box = document.getElementById('custom-confirm-box');
+    const iconEl = document.getElementById('custom-confirm-icon');
+    const msgEl = document.getElementById('custom-confirm-msg');
+    const okBtn = document.getElementById('custom-confirm-ok');
+
+    box.classList.add('alert-only');
+    iconEl.textContent = opts.icon || (opts.type === 'error' ? '⚠️' : 'ℹ️');
+    msgEl.textContent = message;
+    okBtn.textContent = '확인';
+    okBtn.classList.remove('danger');
+    modal.style.display = 'flex';
+
+    const cleanup = () => {
+      modal.style.display = 'none';
+      box.classList.remove('alert-only');
+      okBtn.removeEventListener('click', onOk);
+    };
+    const onOk = () => { cleanup(); resolve(true); };
+    okBtn.addEventListener('click', onOk);
+  });
+}
+
+function showAppConfirm(message, opts){
+  opts = opts || {};
+  return new Promise((resolve) => {
+    const modal = document.getElementById('custom-confirm-modal');
+    const box = document.getElementById('custom-confirm-box');
+    const iconEl = document.getElementById('custom-confirm-icon');
+    const msgEl = document.getElementById('custom-confirm-msg');
+    const okBtn = document.getElementById('custom-confirm-ok');
+    const cancelBtn = document.getElementById('custom-confirm-cancel');
+
+    box.classList.remove('alert-only');
+    iconEl.textContent = opts.icon || (opts.danger ? '⚠️' : '❓');
+    msgEl.textContent = message;
+    okBtn.textContent = opts.okLabel || '확인';
+    cancelBtn.textContent = opts.cancelLabel || '취소';
+    okBtn.classList.toggle('danger', !!opts.danger);
+    modal.style.display = 'flex';
+
+    const cleanup = () => {
+      modal.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+    };
+    const onOk = () => { cleanup(); resolve(true); };
+    const onCancel = () => { cleanup(); resolve(false); };
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
+
+/* Supabase/네트워크 에러 메시지를 사용자 친화적인 한국어로 변환 */
+function friendlyError(error){
+  if(!error) return '알 수 없는 오류가 발생했습니다.';
+  const msg = error.message || String(error);
+  if(msg.includes('Failed to fetch') || msg.includes('NetworkError')){
+    return '네트워크 연결을 확인해주세요.';
+  }
+  if(msg.includes('JWT') || msg.includes('session') || msg.includes('not authenticated')){
+    return '로그인이 만료되었습니다. 다시 로그인해주세요.';
+  }
+  if(msg.includes('permission denied') || msg.includes('row-level security') || msg.includes('policy')){
+    return '이 작업을 수행할 권한이 없습니다.';
+  }
+  if(msg.includes('duplicate key') || msg.includes('already exists')){
+    return '이미 등록된 항목입니다.';
+  }
+  if(msg.includes('Invalid login credentials')){
+    return '아이디 또는 비밀번호가 올바르지 않습니다.';
+  }
+  return msg;
+}
 
 /* ===== 아이디/비밀번호 저장 & 자동 로그인 ===== */
 const AUTO_LOGIN_KEY = 'gnmap_auto_login';
@@ -2216,6 +2472,28 @@ function isValidId(rawId){
   return /^[a-z0-9._-]{2,30}$/i.test(rawId.trim());
 }
 
+function markInputError(...ids){
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.remove('input-error');
+    void el.offsetWidth; // 리플로우 강제 - 같은 애니메이션 재실행 위함
+    el.classList.add('input-error');
+  });
+  const firstEl = document.getElementById(ids[0]);
+  if(firstEl) firstEl.focus();
+}
+function clearInputErrors(...ids){
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('input-error');
+  });
+}
+['gate-email', 'gate-pw', 'gate-name'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', () => el.classList.remove('input-error'));
+});
+
 document.getElementById('gate-btn').addEventListener('click', async () => {
   const rawId = document.getElementById('gate-email').value.trim();
   const pw = document.getElementById('gate-pw').value;
@@ -2223,13 +2501,16 @@ document.getElementById('gate-btn').addEventListener('click', async () => {
   const pendingBox = document.getElementById('gate-pending-msg');
   errBox.textContent = '';
   pendingBox.style.display = 'none';
+  clearInputErrors('gate-email', 'gate-pw', 'gate-name');
 
   if(!rawId || !pw){
     errBox.textContent = '아이디와 비밀번호를 입력해주세요.';
+    markInputError(!rawId ? 'gate-email' : 'gate-pw');
     return;
   }
   if(!isValidId(rawId)){
     errBox.textContent = '아이디는 영문/숫자로만 입력해주세요. (2~30자)';
+    markInputError('gate-email');
     return;
   }
 
@@ -2242,6 +2523,7 @@ document.getElementById('gate-btn').addEventListener('click', async () => {
       const name = document.getElementById('gate-name').value.trim();
       if(!name){
         errBox.textContent = '이름(소속)을 입력해주세요.';
+        markInputError('gate-name');
         btn.disabled = false;
         return;
       }
@@ -2261,6 +2543,7 @@ document.getElementById('gate-btn').addEventListener('click', async () => {
         const until = new Date(lockData[0].locked_until);
         const mins = Math.max(1, Math.ceil((until - new Date()) / 60000));
         errBox.textContent = `로그인 실패 횟수가 초과되어 계정이 잠겼습니다. 약 ${mins}분 후 다시 시도해주세요.`;
+        markInputError('gate-pw');
         btn.disabled = false;
         return;
       }
@@ -2275,9 +2558,8 @@ document.getElementById('gate-btn').addEventListener('click', async () => {
       await afterLogin(data.user);
     }
   }catch(e){
-    errBox.textContent = e.message === 'Invalid login credentials'
-      ? '아이디 또는 비밀번호가 올바르지 않습니다.'
-      : (e.message || '오류가 발생했습니다.');
+    errBox.textContent = friendlyError(e);
+    markInputError('gate-pw');
     btn.disabled = false;
   }
 });
@@ -2389,12 +2671,12 @@ async function toggleFavorite(siteId, btnEl){
   const isFav = FAVORITE_SITE_IDS.has(siteId);
   if(isFav){
     const { error } = await sb.from('gnmap_favorites').delete().eq('site_id', siteId);
-    if(error){ alert('즐겨찾기 처리 중 오류: ' + error.message); return; }
+    if(error){ showToast('즐겨찾기 처리 중 오류: ' + friendlyError(error), 'error'); return; }
     FAVORITE_SITE_IDS.delete(siteId);
   }else{
     const userId = CURRENT_PROFILE ? CURRENT_PROFILE.id : null;
     const { error } = await sb.from('gnmap_favorites').insert({ site_id: siteId, user_id: userId });
-    if(error){ alert('즐겨찾기 처리 중 오류: ' + error.message); return; }
+    if(error){ showToast('즐겨찾기 처리 중 오류: ' + friendlyError(error), 'error'); return; }
     FAVORITE_SITE_IDS.add(siteId);
   }
   if(btnEl){
@@ -2455,7 +2737,7 @@ function attachNoteHandlers(content, siteId){
 async function loadSitesFromSupabase(){
   const { data, error } = await sb.from('gnmap_sites').select('*').order('id');
   if(error){
-    alert('데이터를 불러오지 못했습니다: ' + error.message);
+    showAppAlert('데이터를 불러오지 못했습니다.\n' + friendlyError(error), {type:'error'});
     window.CONFIRMED = [];
     window.REVIEW = [];
     return;
@@ -2477,7 +2759,10 @@ async function loadSitesFromSupabase(){
       acc: row.accident_report_count,
       sup: row.supervision_count,
       ap: false,
-      r: (!row.address) ? '주소 정보 없음' : (!row.lat || !row.lng) ? '주소 확인 실패(좌표 변환 불가)' : ''
+      r: (!row.address) ? '주소 정보 없음'
+        : (!row.lat || !row.lng) ? '주소 확인 실패(좌표 변환 불가)'
+        : (row.dong && !DONG_ORDER.includes(row.dong)) ? `강남구 외 지역으로 확인됨(${row.dong})`
+        : ''
     };
     if(row.status === 'confirmed' && row.lat && row.lng){
       confirmed.push(site);
@@ -2694,7 +2979,7 @@ document.getElementById('upload-file-input').addEventListener('change', async (e
         '인식할 수 없는 양식입니다.\n' +
         '이 파일로 그대로 교체하시겠습니까? (매핑 없이 원본 헤더만 저장되며, 지도에는 표시되지 않을 수 있습니다)';
       // 확인창을 통해서만 진행하도록 별도 플래그 처리
-      const proceed = confirm('업로드한 파일이 지원하는 두 양식(양식1: 사업장 데이터베이스 검색 / 양식2: 사업장 리스트) 중 어느 것과도 일치하지 않습니다.\n\n그래도 이 데이터로 교체하시겠습니까?\n(주의: 필드가 자동 매핑되지 않아 지도에 정상 표시되지 않을 수 있습니다)');
+      const proceed = await showAppConfirm('업로드한 파일이 지원하는 두 양식(양식1: 사업장 데이터베이스 검색 / 양식2: 사업장 리스트) 중 어느 것과도 일치하지 않습니다.\n\n그래도 이 데이터로 교체하시겠습니까?\n(주의: 필드가 자동 매핑되지 않아 지도에 정상 표시되지 않을 수 있습니다)', {danger:true, okLabel:'교체'});
       if(!proceed){
         statusEl.textContent = '업로드가 취소되었습니다. 파일을 다시 선택해주세요.';
         return;
@@ -2733,7 +3018,8 @@ document.getElementById('btn-upload-start').addEventListener('click', async () =
   if(!uploadParsedRows || !uploadParsedRows.length) return;
 
   const confirmMsg = `총 ${uploadParsedRows.length}건의 데이터로 기존 사업장 데이터를 전부 교체합니다.\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`;
-  if(!confirm(confirmMsg)) return;
+  const okToProceed = await showAppConfirm(confirmMsg, {danger:true, okLabel:'교체 시작'});
+  if(!okToProceed) return;
 
   const statusEl = document.getElementById('upload-status');
   const startBtn = document.getElementById('btn-upload-start');
@@ -2758,7 +3044,13 @@ document.getElementById('btn-upload-start').addEventListener('click', async () =
           row.lat = geo.lat;
           row.lng = geo.lng;
           row.dong = geo.dong;
-          row.status = 'confirmed';
+          if(geo.dong && DONG_ORDER.includes(geo.dong)){
+            row.status = 'confirmed';
+          }else{
+            // 강남구 22개 동에 속하지 않는 주소 - 좌표는 확보했으나 확인이 필요함
+            row.status = 'review';
+            row.outOfGangnam = true;
+          }
         }else{
           row.lat = null; row.lng = null; row.dong = null;
           row.status = 'review';
@@ -2811,12 +3103,17 @@ document.getElementById('btn-upload-start').addEventListener('click', async () =
 
     progressFill.style.width = '100%';
     progressText.textContent = '완료';
-    statusEl.textContent = `업로드 완료! 총 ${rows.length}건 반영되었습니다.\n지도를 새로고침합니다...`;
     lastOwnUploadAt = Date.now();
 
     // 업로드 히스토리 기록 (실패해도 업로드 자체는 이미 성공했으므로 조용히 무시)
     const confirmedCnt = rows.filter(r => r.status === 'confirmed').length;
     const reviewCnt = rows.length - confirmedCnt;
+    statusEl.innerHTML =
+      `<b>업로드 완료</b><br>` +
+      `총 ${rows.length}건 반영 · 확정 ${confirmedCnt}건` +
+      (reviewCnt > 0 ? ` · <span style="color:var(--warn)">확인필요 ${reviewCnt}건</span>` : '') +
+      (reviewCnt > 0 ? `<br><span style="font-size:11px;color:var(--ink-soft)">주소를 찾지 못한 ${reviewCnt}건은 "확인필요" 탭에서 확인해주세요.</span>` : '');
+
     sb.from('gnmap_upload_history').insert({
       uploaded_by: CURRENT_PROFILE ? CURRENT_PROFILE.id : null,
       uploaded_by_name: CURRENT_PROFILE ? CURRENT_PROFILE.name : null,
@@ -2829,12 +3126,9 @@ document.getElementById('btn-upload-start').addEventListener('click', async () =
 
     await loadSitesFromSupabase();
     initApp();
-
-    setTimeout(() => {
-      document.getElementById('upload-modal').style.display = 'none';
-    }, 1200);
+    showToast(`업로드 완료 · 확정 ${confirmedCnt}건 / 확인필요 ${reviewCnt}건`, 'success');
   }catch(err){
-    statusEl.textContent = '업로드 중 오류가 발생했습니다: ' + err.message + '\n기존 데이터가 삭제되었을 수 있으니 다시 시도해주세요.';
+    statusEl.textContent = '업로드 중 오류가 발생했습니다.\n' + friendlyError(err) + '\n기존 데이터가 삭제되었을 수 있으니 다시 시도해주세요.';
   }finally{
     startBtn.disabled = false;
     document.getElementById('upload-file-input').disabled = false;
@@ -2942,11 +3236,12 @@ async function loadUploadHistory(){
 
 async function loadUsersList(){
   const listEl = document.getElementById('users-list');
+  listEl.style.opacity = '1';
   listEl.innerHTML = '<div id="users-empty-msg">불러오는 중...</div>';
 
   const { data, error } = await sb.from('gnmap_profiles').select('*').order('created_at', { ascending: false });
   if(error){
-    listEl.innerHTML = '<div id="users-empty-msg">목록을 불러오지 못했습니다: ' + escapeHtml(error.message) + '</div>';
+    listEl.innerHTML = '<div id="users-empty-msg">목록을 불러오지 못했습니다: ' + friendlyError(error) + '</div>';
     return;
   }
   if(!data || !data.length){
@@ -3026,20 +3321,26 @@ async function loadUsersList(){
 }
 
 async function updateUserApproval(userId, approved){
+  document.getElementById('users-list').style.opacity = '.5';
   const { error } = await sb.from('gnmap_profiles').update({ approved }).eq('id', userId);
   if(error){
-    alert('처리 중 오류가 발생했습니다: ' + error.message);
+    document.getElementById('users-list').style.opacity = '1';
+    showToast('처리 중 오류: ' + friendlyError(error), 'error');
     return;
   }
+  showToast(approved ? '승인 처리되었습니다.' : '승인이 취소되었습니다.', 'success');
   loadUsersList();
 }
 
 async function unlockUser(userId){
+  document.getElementById('users-list').style.opacity = '.5';
   const { error } = await sb.from('gnmap_profiles').update({ locked_until: null, failed_login_count: 0 }).eq('id', userId);
   if(error){
-    alert('처리 중 오류가 발생했습니다: ' + error.message);
+    document.getElementById('users-list').style.opacity = '1';
+    showToast('처리 중 오류: ' + friendlyError(error), 'error');
     return;
   }
+  showToast('잠금이 해제되었습니다.', 'success');
   loadUsersList();
 }
 
@@ -3050,12 +3351,16 @@ function formatDateTime(iso){
 }
 
 async function rejectUser(userId, name){
-  if(!confirm((name || '이 사용자') + '의 계정을 삭제하시겠습니까?\n삭제 후 다시 로그인하면 승인대기 상태로 초기화됩니다.\n이 작업은 되돌릴 수 없습니다.')) return;
+  const ok = await showAppConfirm((name || '이 사용자') + '의 계정을 삭제하시겠습니까?\n삭제 후 다시 로그인하면 승인대기 상태로 초기화됩니다.\n이 작업은 되돌릴 수 없습니다.', {danger:true, okLabel:'삭제'});
+  if(!ok) return;
+  document.getElementById('users-list').style.opacity = '.5';
   const { error } = await sb.from('gnmap_profiles').delete().eq('id', userId);
   if(error){
-    alert('처리 중 오류가 발생했습니다: ' + error.message);
+    document.getElementById('users-list').style.opacity = '1';
+    showToast('처리 중 오류: ' + friendlyError(error), 'error');
     return;
   }
+  showToast('계정이 삭제되었습니다.', 'success');
   loadUsersList();
 }
 
@@ -3342,16 +3647,21 @@ function buildDongFilterList(){
 function updateDongFilterLabel(){
   const btn = document.getElementById('dong-filter-btn');
   const label = document.getElementById('dong-filter-label');
+  const badge = document.getElementById('dong-filter-badge');
   const n = selectedDongs.size;
   if(n === 0){
     label.textContent = '동 선택';
     btn.classList.remove('active');
+    badge.style.display = 'none';
   }else if(n === 1){
     label.textContent = [...selectedDongs][0];
     btn.classList.add('active');
+    badge.style.display = 'none';
   }else{
-    label.textContent = `동 ${n}개 선택`;
+    label.textContent = '동 선택';
     btn.classList.add('active');
+    badge.textContent = n;
+    badge.style.display = 'inline-flex';
   }
 }
 
@@ -3788,7 +4098,7 @@ function buildSiteItemEl(s, showDongTag){
     '<div class="sname">' + (FAVORITE_SITE_IDS.has(s.id) ? '<span class="sfav-mark">★</span>' : '') + escapeHtml(s.n) + (s.ap ? '<span class="sflag">정확도낮음</span>' : '') + '</div>' +
     '<div class="saddr">' + escapeHtml(s.p) + '</div>' +
     '<div class="saddr">' + escapeHtml(s.a) + '</div>' +
-    '<div class="samount">' + formatAmount(s.m) + '</div>' +
+    '<div class="samount" title="' + (Number(s.m)||0).toLocaleString('ko-KR') + '원">' + formatAmount(s.m) + '</div>' +
     distHtml;
   div.addEventListener('click', () => {
     selectSite(s._idx, true);
@@ -3866,7 +4176,7 @@ function renderReviewList(listEl, filterText){
       '<div class="saddr">' + escapeHtml(s.p) + '</div>' +
       '<div class="saddr">' + escapeHtml(s.a) + '</div>' +
       '<div class="saddr">' + escapeHtml(s.s) + ' ~ ' + escapeHtml(s.e) + '</div>' +
-      '<div class="samount">' + formatAmount(s.m) + '</div>' +
+      '<div class="samount" title="' + (Number(s.m)||0).toLocaleString('ko-KR') + '원">' + formatAmount(s.m) + '</div>' +
       '<button class="review-copy-btn">주소복사</button>' +
       '<div class="sreason-toggle" data-target="' + reasonId + '">' +
         '<span class="sreason-badge">주소확인 실패</span>' +
@@ -4034,7 +4344,19 @@ function selectSite(idx, moveMap){
 function formatAmount(v){
   const n = Number(v);
   if(isNaN(n) || n === 0) return '-';
-  return n.toLocaleString('ko-KR') + '원';
+  const eok = Math.floor(n / 100000000);
+  const man = Math.floor((n % 100000000) / 10000);
+  let unitPart = '';
+  if(eok > 0 && man > 0){
+    unitPart = eok.toLocaleString('ko-KR') + '억 ' + man.toLocaleString('ko-KR') + '만원';
+  }else if(eok > 0){
+    unitPart = eok.toLocaleString('ko-KR') + '억원';
+  }else if(man > 0){
+    unitPart = man.toLocaleString('ko-KR') + '만원';
+  }else{
+    return n.toLocaleString('ko-KR') + '원';
+  }
+  return unitPart;
 }
 
 function isMobile(){
@@ -4118,17 +4440,22 @@ function fallbackCopy(text, cb){
 function updateAmountFilterLabel(){
   const btn = document.getElementById('amount-filter-btn');
   const label = document.getElementById('amount-filter-label');
+  const badge = document.getElementById('amount-filter-badge');
   const n = selectedAmountKeys.size;
   if(n === 0){
     label.textContent = '공사금액';
     btn.classList.remove('active');
+    badge.style.display = 'none';
   }else if(n === 1){
     const key = [...selectedAmountKeys][0];
     label.textContent = AMOUNT_LABELS[key] || '공사금액';
     btn.classList.add('active');
+    badge.style.display = 'none';
   }else{
-    label.textContent = `공사금액 ${n}개 선택`;
+    label.textContent = '공사금액';
     btn.classList.add('active');
+    badge.textContent = n;
+    badge.style.display = 'inline-flex';
   }
 }
 
@@ -4193,7 +4520,7 @@ function attachLocateButton(){
   if(!btn) return;
   btn.addEventListener('click', () => {
     if(!navigator.geolocation){
-      alert('이 기기/브라우저에서는 위치 확인을 지원하지 않습니다.');
+      showToast('이 기기/브라우저에서는 위치 확인을 지원하지 않습니다.', 'error');
       return;
     }
     btn.classList.add('loading');
@@ -4215,7 +4542,7 @@ function attachLocateButton(){
         if(err.code === err.PERMISSION_DENIED){
           msg = '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 접근을 허용해주세요.';
         }
-        alert(msg);
+        showToast(msg, 'error');
       },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
     );
@@ -4281,7 +4608,8 @@ function attachHandlers(){
   const logoutBtn = document.getElementById('btn-logout');
   if(logoutBtn){
     logoutBtn.addEventListener('click', async () => {
-      if(confirm('로그아웃 하시겠습니까?')){
+      const ok = await showAppConfirm('로그아웃 하시겠습니까?');
+      if(ok){
         try{ localStorage.removeItem(AUTO_LOGIN_KEY); }catch(e){}
         if('clearAppBadge' in navigator){ navigator.clearAppBadge().catch(() => {}); }
         await sb.auth.signOut();
@@ -4302,13 +4630,27 @@ function attachHandlers(){
   let searchDebounce = null;
   const searchInput = document.getElementById('search-input');
   const suggestBox = document.getElementById('search-suggest');
+  const clearBtn = document.getElementById('search-clear-btn');
+
+  function updateSearchClearBtn(){
+    clearBtn.style.display = searchInput.value.trim() ? 'flex' : 'none';
+  }
 
   searchInput.addEventListener('input', () => {
+    updateSearchClearBtn();
     clearTimeout(searchDebounce);
     searchDebounce = setTimeout(() => {
       renderSideList();
       renderSearchSuggest(searchInput.value.trim());
     }, 150);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    updateSearchClearBtn();
+    renderSideList();
+    renderSearchSuggest('');
+    searchInput.focus();
   });
 
   searchInput.addEventListener('focus', () => {
