@@ -705,7 +705,7 @@
     z-index:300;
     padding:20px;
   }
-  #supervision-modal{
+  #supervision-view-modal{
     position:fixed; inset:0;
     background:rgba(11,25,43,.55);
     display:flex;
@@ -714,7 +714,7 @@
     z-index:300;
     padding:20px;
   }
-  #supervision-modal-box{
+  #supervision-view-modal-box{
     background:var(--panel);
     border-radius:var(--radius-lg);
     padding:22px 22px 18px;
@@ -724,15 +724,15 @@
     display:flex;
     flex-direction:column;
   }
-  #supervision-modal-head{
+  #supervision-view-modal-head{
     display:flex;
     align-items:center;
     justify-content:space-between;
     margin-bottom:12px;
     flex-shrink:0;
   }
-  #supervision-modal-head h3{font-size:16px; color:var(--gov-navy);}
-  #btn-supervision-cancel{
+  #supervision-view-modal-head h3{font-size:16px; color:var(--gov-navy);}
+  #btn-supervision-view-cancel{
     padding:6px 14px;
     background:var(--gov-blue-light);
     color:var(--ink);
@@ -741,6 +741,19 @@
     font-size:12px;
     font-weight:700;
     cursor:pointer;
+  }
+  #supervision-view-list{
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  #supervision-admin-panel{
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+    flex:1;
+    min-height:0;
   }
   #btn-supervision-new{
     width:100%;
@@ -891,6 +904,8 @@
     display:flex;
     flex-direction:column;
     gap:8px;
+    flex:1;
+    min-height:0;
   }
   .history-row{
     padding:11px 13px;
@@ -913,6 +928,8 @@
     flex-direction:column;
     gap:8px;
     transition:opacity .15s ease;
+    flex:1;
+    min-height:0;
   }
   .user-row{
     display:flex;
@@ -1022,7 +1039,7 @@
   .sv-badge.ongoing{background:#ffd166; color:#6b4a00;}
   .sv-badge.done{background:rgba(255,255,255,.08); color:#9aa7b4;}
   .sv-badge.urgent{background:var(--danger); color:#fff;}
-  #btn-supervision-all, #btn-supervision-add{
+  #btn-supervision-all{
     padding:4px 11px;
     background:rgba(255,255,255,.12);
     color:#fff;
@@ -1034,7 +1051,7 @@
     flex-shrink:0;
     white-space:nowrap;
   }
-  #btn-supervision-all:hover, #btn-supervision-add:hover{background:rgba(255,255,255,.2);}
+  #btn-supervision-all:hover{background:rgba(255,255,255,.2);}
 
   #header-top{
     padding:9px 24px;
@@ -2116,7 +2133,6 @@
       padding-right:12px;
       gap:6px;
     }
-    #btn-supervision-add{display:none !important;}
     #supervision-board-item{font-size:11px;}
     #header-top{
       padding:7px 12px;
@@ -2408,7 +2424,6 @@
       <div id="supervision-board-item"></div>
     </div>
     <button id="btn-supervision-all">전체보기</button>
-    <button id="btn-supervision-add" style="display:none">+ 등록</button>
   </div>
   <div id="header-top">
     <div class="gov-mark">GOV</div>
@@ -2533,6 +2548,17 @@
   </div>
 </div>
 
+<!-- 감독점검 상황판 전체보기 모달 (조회 전용, 등록/수정은 관리자 설정에서) -->
+<div id="supervision-view-modal" style="display:none">
+  <div id="supervision-view-modal-box">
+    <div id="supervision-view-modal-head">
+      <h3>감독점검 상황판</h3>
+      <button id="btn-supervision-view-cancel">닫기</button>
+    </div>
+    <div id="supervision-view-list"></div>
+  </div>
+</div>
+
 <!-- 관리자 회원 관리 모달 -->
 <div id="users-modal" style="display:none">
   <div id="users-modal-box">
@@ -2543,47 +2569,40 @@
     <div id="admin-modal-tabs">
       <button class="admin-modal-tab active" data-tab="users">회원 관리</button>
       <button class="admin-modal-tab" data-tab="history">업로드 이력</button>
+      <button class="admin-modal-tab" data-tab="supervision">감독점검 관리</button>
     </div>
     <div id="users-list"></div>
     <div id="upload-history-list" style="display:none"></div>
-  </div>
-</div>
-
-<!-- 감독점검 상황판 전체보기/등록 모달 -->
-<div id="supervision-modal" style="display:none">
-  <div id="supervision-modal-box">
-    <div id="supervision-modal-head">
-      <h3>감독점검 상황판</h3>
-      <button id="btn-supervision-cancel">닫기</button>
-    </div>
-    <button id="btn-supervision-new" style="display:none">+ 새 감독점검 등록</button>
-    <div id="supervision-form" style="display:none">
-      <label>감독명</label>
-      <input type="text" id="sv-title" placeholder="예: 2026년 하반기 정기감독">
-      <label>담당자</label>
-      <input type="text" id="sv-manager" placeholder="예: 홍길동 감독관">
-      <div id="sv-date-row">
-        <div>
-          <label>시작일</label>
-          <input type="date" id="sv-start">
+    <div id="supervision-admin-panel" style="display:none">
+      <button id="btn-supervision-new" style="display:none">+ 새 감독점검 등록</button>
+      <div id="supervision-form" style="display:none">
+        <label>감독명</label>
+        <input type="text" id="sv-title" placeholder="예: 2026년 하반기 정기감독">
+        <label>담당자</label>
+        <input type="text" id="sv-manager" placeholder="예: 홍길동 감독관">
+        <div id="sv-date-row">
+          <div>
+            <label>시작일</label>
+            <input type="date" id="sv-start">
+          </div>
+          <div>
+            <label>종료일</label>
+            <input type="date" id="sv-end">
+          </div>
         </div>
-        <div>
-          <label>종료일</label>
-          <input type="date" id="sv-end">
+        <label>진행상태</label>
+        <select id="sv-status">
+          <option value="scheduled">예정</option>
+          <option value="ongoing">진행중</option>
+          <option value="done">완료</option>
+        </select>
+        <div id="sv-form-actions">
+          <button id="btn-sv-form-cancel">취소</button>
+          <button id="btn-sv-form-save">저장</button>
         </div>
       </div>
-      <label>진행상태</label>
-      <select id="sv-status">
-        <option value="scheduled">예정</option>
-        <option value="ongoing">진행중</option>
-        <option value="done">완료</option>
-      </select>
-      <div id="sv-form-actions">
-        <button id="btn-sv-form-cancel">취소</button>
-        <button id="btn-sv-form-save">저장</button>
-      </div>
+      <div id="supervision-list"></div>
     </div>
-    <div id="supervision-list"></div>
   </div>
 </div>
 
@@ -2926,7 +2945,6 @@ async function enterApp(){
   if(CURRENT_PROFILE && CURRENT_PROFILE.role === 'admin'){
     document.getElementById('btn-admin-upload').style.display = 'inline-block';
     document.getElementById('btn-admin-users').style.display = 'inline-block';
-    document.getElementById('btn-supervision-add').style.display = 'inline-block';
     document.getElementById('btn-supervision-new').style.display = 'block';
   }
   renderListSkeleton();
@@ -3005,11 +3023,21 @@ async function initSupervisionBoard(){
     .neq('status', 'done')
     .order('start_date');
   const board = document.getElementById('supervision-board');
+  const isAdmin = CURRENT_PROFILE && CURRENT_PROFILE.role === 'admin';
+
   if(error || !data || data.length === 0){
     SUPERVISIONS = [];
-    board.style.display = 'none';
-    document.body.classList.remove('has-supervision-board');
     if(svRollTimer){ clearInterval(svRollTimer); svRollTimer = null; }
+    if(isAdmin){
+      // 등록된 감독점검이 없어도 관리자에게는 상황판을 계속 보여줘서 "+ 등록" 버튼에 접근할 수 있게 함
+      board.style.display = 'flex';
+      document.body.classList.add('has-supervision-board');
+      document.getElementById('supervision-board-item').innerHTML =
+        '<span style="opacity:.75">등록된 감독점검이 없습니다. "관리자 설정 → 감독점검 관리"에서 추가해주세요.</span>';
+    }else{
+      board.style.display = 'none';
+      document.body.classList.remove('has-supervision-board');
+    }
     updateMobileFilterTop();
     return;
   }
@@ -3044,22 +3072,47 @@ function renderSvBoardItem(){
 }
 
 document.getElementById('btn-supervision-all').addEventListener('click', () => {
-  openSupervisionModal();
+  openSupervisionViewModal();
 });
-document.getElementById('btn-supervision-add').addEventListener('click', () => {
-  openSupervisionModal();
-  showSvForm();
-});
-document.getElementById('btn-supervision-cancel').addEventListener('click', () => {
-  document.getElementById('supervision-modal').style.display = 'none';
-  hideSvForm();
+document.getElementById('btn-supervision-view-cancel').addEventListener('click', () => {
+  document.getElementById('supervision-view-modal').style.display = 'none';
 });
 document.getElementById('btn-supervision-new').addEventListener('click', () => showSvForm());
 document.getElementById('btn-sv-form-cancel').addEventListener('click', () => hideSvForm());
 
-function openSupervisionModal(){
-  document.getElementById('supervision-modal').style.display = 'flex';
-  loadSupervisionFullList();
+function openSupervisionViewModal(){
+  document.getElementById('supervision-view-modal').style.display = 'flex';
+  loadSupervisionViewList();
+}
+
+async function loadSupervisionViewList(){
+  const listEl = document.getElementById('supervision-view-list');
+  listEl.innerHTML = '<div id="users-empty-msg">불러오는 중...</div>';
+
+  const { data, error } = await sb.from('gnmap_supervisions').select('*').order('start_date', { ascending: false });
+  if(error){
+    listEl.innerHTML = '<div id="users-empty-msg">목록을 불러오지 못했습니다: ' + friendlyError(error) + '</div>';
+    return;
+  }
+  if(!data || !data.length){
+    listEl.innerHTML = '<div id="users-empty-msg">등록된 감독점검이 없습니다.</div>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+  data.forEach(sv => {
+    const row = document.createElement('div');
+    row.className = 'sv-row';
+    row.innerHTML =
+      '<div class="sv-row-top">' +
+        svBadgeHtml(sv) +
+        '<span class="sv-row-title">' + escapeHtml(sv.title) + '</span>' +
+      '</div>' +
+      '<div class="sv-row-detail">' + escapeHtml(sv.start_date) + ' ~ ' + escapeHtml(sv.end_date) +
+        (sv.manager_name ? ' · ' + escapeHtml(sv.manager_name) : '') +
+      '</div>';
+    listEl.appendChild(row);
+  });
 }
 
 function showSvForm(sv){
@@ -3721,6 +3774,7 @@ document.querySelectorAll('.admin-modal-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     switchAdminTab(tab.dataset.tab);
     if(tab.dataset.tab === 'history') loadUploadHistory();
+    if(tab.dataset.tab === 'supervision') loadSupervisionFullList();
   });
 });
 
@@ -3728,6 +3782,7 @@ function switchAdminTab(tabName){
   document.querySelectorAll('.admin-modal-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
   document.getElementById('users-list').style.display = (tabName === 'users') ? 'flex' : 'none';
   document.getElementById('upload-history-list').style.display = (tabName === 'history') ? 'flex' : 'none';
+  document.getElementById('supervision-admin-panel').style.display = (tabName === 'supervision') ? 'flex' : 'none';
 }
 
 async function loadUploadHistory(){
