@@ -1087,8 +1087,9 @@
   #header-main{
     padding:13px 24px;
     display:flex;
+    flex-wrap:wrap;
     align-items:center;
-    gap:14px;
+    gap:10px 14px;
   }
   header h1{
     font-size:17px;
@@ -5186,6 +5187,10 @@ function attachHandlers(){
     document.getElementById('btn-tab-sites').classList.remove('active');
     document.getElementById('search-input').value = '';
     renderSideList();
+    // 모바일에서는 확인필요 탭을 누르면 목록을 바로 펼쳐서 보여줌
+    if(window.innerWidth <= 760){
+      setSheetState('sheet-open');
+    }
   });
   document.getElementById('btn-clear-selection').addEventListener('click', () => {
     showDongLabels = !showDongLabels;
