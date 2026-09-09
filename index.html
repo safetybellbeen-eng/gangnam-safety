@@ -4189,7 +4189,7 @@ function syncDongFilterUI(){
   const menu = document.getElementById('dong-filter-menu');
   if(!menu) return;
   const allOpt = menu.querySelector('.amount-opt.all-opt');
-  menu.querySelectorAll('.amount-opt[data-dong]').forEach(opt => {
+  menu.querySelectorAll('.amount-opt[data-dong]:not(.all-opt)').forEach(opt => {
     opt.classList.toggle('selected', selectedDongs.has(opt.dataset.dong));
   });
   if(allOpt) allOpt.classList.toggle('selected', selectedDongs.size === 0);
@@ -4220,7 +4220,7 @@ function attachDongFilter(){
     syncDongFilterUI();
   });
 
-  menu.querySelectorAll('.amount-opt[data-dong]').forEach(opt => {
+  menu.querySelectorAll('.amount-opt[data-dong]:not(.all-opt)').forEach(opt => {
     opt.addEventListener('click', () => {
       const dongName = opt.dataset.dong;
       if(selectedDongs.has(dongName)){
@@ -5050,7 +5050,7 @@ function syncAmountFilterUI(){
   const menu = document.getElementById('amount-filter-menu');
   if(!menu) return;
   const allOpt = menu.querySelector('.amount-opt.all-opt');
-  menu.querySelectorAll('.amount-opt[data-key]').forEach(opt => {
+  menu.querySelectorAll('.amount-opt[data-key]:not(.all-opt)').forEach(opt => {
     opt.classList.toggle('selected', selectedAmountKeys.has(opt.dataset.key));
   });
   if(allOpt) allOpt.classList.toggle('selected', selectedAmountKeys.size === 0);
@@ -5081,7 +5081,7 @@ function attachAmountFilter(){
   });
 
   // 개별 구간: 토글(다중선택), 하나라도 선택되면 '전체' 해제
-  menu.querySelectorAll('.amount-opt[data-key]').forEach(opt => {
+  menu.querySelectorAll('.amount-opt[data-key]:not(.all-opt)').forEach(opt => {
     opt.addEventListener('click', () => {
       const key = opt.dataset.key;
       if(selectedAmountKeys.has(key)){
