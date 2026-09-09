@@ -930,6 +930,16 @@
   .dong-head.is-all-option:not(.is-active-dong):hover{
     background:var(--gov-blue-light);
   }
+  .dong-head.fav-group-head{
+    background:#fff9ec;
+    color:#8a6100;
+    font-weight:800;
+  }
+  html[data-theme="dark"] .dong-head.fav-group-head{
+    background:#2e2410;
+    color:#e0b862;
+  }
+  .dong-head.fav-group-head:hover{background:#fff2d4;}
   .dong-head .cnt{
     font-weight:600;
     color:var(--ink-soft);
@@ -1389,6 +1399,23 @@
     border-color:#fff;
   }
   #dong-filter-btn .caret{font-size:9px;}
+  #favorite-filter-btn{
+    padding:7px 13px;
+    font-size:12px;
+    font-weight:600;
+    border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.06);
+    border-radius:20px;
+    cursor:pointer;
+    color:#d8e6f7;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  #favorite-filter-btn.active{
+    background:#ffd166;
+    color:#6b4a00;
+    border-color:#ffd166;
+  }
   #dong-filter-menu{
     display:none;
     position:absolute;
@@ -1641,7 +1668,8 @@
       grid-template-areas:
         "title actions"
         "search search"
-        "filter1 filter2";
+        "filter1 filter2"
+        "filter3 filter3";
       gap:8px 10px;
     }
     header h1{font-size:14.5px;grid-area:title;align-self:center;}
@@ -1680,6 +1708,14 @@
     #dong-filter-btn{
       width:100%;
       justify-content:center;
+      padding:8px 10px;
+      font-size:12px;
+    }
+    #favorite-filter-btn{
+      grid-area:filter3;
+      justify-self:stretch;
+      width:100%;
+      text-align:center;
       padding:8px 10px;
       font-size:12px;
     }
@@ -1917,6 +1953,7 @@
         </div>
       </div>
     </div>
+    <button id="favorite-filter-btn" title="즐겨찾기 사업장만 보기">★ 즐겨찾기</button>
   </div>
 </header>
 <div id="active-filter-bar" style="display:none"></div>
@@ -3003,6 +3040,7 @@ function initApp(){
     attachMobileSheet();
     attachAmountFilter();
     attachDongFilter();
+    attachFavoriteFilter();
     attachLocateButton();
   });
 }
@@ -3095,10 +3133,13 @@ function amountFilteredSites(){
     .map((s, idx) => ({...s, _idx: idx}))
     .filter(s => passAmountFilter(s));
 }
+let showFavoritesOnly = false;
+
 function dongAndAmountFilteredSites(){
   return amountFilteredSites().filter(s => {
-    if(selectedDongs.size === 0) return true;
-    return selectedDongs.has(s.sd || s.d);
+    if(selectedDongs.size > 0 && !selectedDongs.has(s.sd || s.d)) return false;
+    if(showFavoritesOnly && !FAVORITE_SITE_IDS.has(s.id)) return false;
+    return true;
   });
 }
 function passAmountFilter(s){
@@ -3205,6 +3246,17 @@ function attachDongFilter(){
   applyBtn.addEventListener('click', () => {
     updateDongFilterLabel();
     menu.classList.remove('open');
+    applyView();
+  });
+}
+
+function attachFavoriteFilter(){
+  const btn = document.getElementById('favorite-filter-btn');
+  if(!btn || btn.dataset.bound === '1') return;
+  btn.dataset.bound = '1';
+  btn.addEventListener('click', () => {
+    showFavoritesOnly = !showFavoritesOnly;
+    btn.classList.toggle('active', showFavoritesOnly);
     applyView();
   });
 }
@@ -3318,6 +3370,15 @@ function renderActiveFilterBar(){
     }});
   });
 
+  if(showFavoritesOnly){
+    chips.push({ label: '★ 즐겨찾기', onRemove: () => {
+      showFavoritesOnly = false;
+      const favBtn = document.getElementById('favorite-filter-btn');
+      if(favBtn) favBtn.classList.remove('active');
+      applyView();
+    }});
+  }
+
   if(chips.length === 0){
     bar.style.display = 'none';
     bar.innerHTML = '';
@@ -3340,6 +3401,9 @@ function renderActiveFilterBar(){
   clearBtn.addEventListener('click', () => {
     selectedDongs.clear();
     selectedAmountKeys.clear();
+    showFavoritesOnly = false;
+    const favBtn = document.getElementById('favorite-filter-btn');
+    if(favBtn) favBtn.classList.remove('active');
     syncDongFilterUI();
     syncAmountFilterUI();
     applyView();
@@ -3422,6 +3486,32 @@ function renderSitesList(listEl, filterText){
   });
   allDiv.appendChild(allHead);
   frag.appendChild(allDiv);
+
+  // '즐겨찾기' 그룹 - 즐겨찾기가 있고, 즐겨찾기 전용 필터가 꺼져있을 때만 별도 노출
+  if(!showFavoritesOnly && FAVORITE_SITE_IDS.size > 0){
+    const favSites = base.filter(s => FAVORITE_SITE_IDS.has(s.id));
+    if(favSites.length > 0){
+      const favDiv = document.createElement('div');
+      favDiv.className = 'dong-group';
+      const favHead = document.createElement('div');
+      favHead.className = 'dong-head fav-group-head';
+      favHead.innerHTML =
+        '<span class="dong-head-name">★ 즐겨찾기 사업장</span>' +
+        '<span><span class="cnt">' + favSites.length + '건</span> <span class="arrow">▶</span></span>';
+      const favItemsDiv = document.createElement('div');
+      favItemsDiv.className = 'dong-items';
+      favSites.forEach(s => {
+        favItemsDiv.appendChild(buildSiteItemEl(s, true));
+      });
+      favHead.addEventListener('click', () => {
+        favHead.classList.toggle('open');
+        favItemsDiv.classList.toggle('open');
+      });
+      favDiv.appendChild(favHead);
+      favDiv.appendChild(favItemsDiv);
+      frag.appendChild(favDiv);
+    }
+  }
 
   // 정렬 드롭바 (항상 표시)
   const sortBar = document.createElement('div');
