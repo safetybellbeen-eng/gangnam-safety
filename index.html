@@ -1968,7 +1968,7 @@
     overflow-wrap:break-word;
   }
   .ci-fav-btn{
-    margin-left:8px;
+    margin-right:8px;
     cursor:pointer;
     color:#d4a017;
     font-size:16px;
@@ -2216,6 +2216,19 @@
       width:auto;
       min-width:150px;
       right:auto;
+    }
+    /* 모바일: 즐겨찾기 등 활성 필터 칩 바도 지도 위 필터버튼 바로 아래에 함께 오버레이 */
+    #active-filter-bar{
+      position:fixed;
+      top:calc(var(--mobile-filter-top, 100px) + 38px);
+      left:10px;
+      right:10px;
+      z-index:21;
+      background:var(--panel);
+      border-radius:var(--radius-sm);
+      box-shadow:var(--shadow-2);
+      border-bottom:none;
+      padding:8px 10px;
     }
 
     #main{position:relative;}
@@ -4568,6 +4581,27 @@ function renderSitesList(listEl, filterText){
   const isFlatSort = ['distance', 'amount-desc', 'amount-asc', 'deadline', 'favorite'].includes(sortMode) &&
     !(sortMode === 'distance' && !myLocation);
 
+  // 정렬 기준에 맞게 배열을 정렬하는 공통 함수 (동 그룹 내부 정렬에도 재사용)
+  function applySortOrder(arr){
+    if(sortMode === 'distance' && myLocation){
+      arr.sort((a,b) => a._dist - b._dist);
+    }else if(sortMode === 'amount-desc'){
+      arr.sort((a,b) => (b.m || 0) - (a.m || 0));
+    }else if(sortMode === 'amount-asc'){
+      arr.sort((a,b) => (a.m || 0) - (b.m || 0));
+    }else if(sortMode === 'deadline'){
+      const toTime = v => v ? new Date(v).getTime() : Infinity;
+      arr.sort((a,b) => toTime(a.e) - toTime(b.e));
+    }else if(sortMode === 'favorite'){
+      arr.sort((a,b) => {
+        const fa = FAVORITE_SITE_IDS.has(a.id) ? 0 : 1;
+        const fb = FAVORITE_SITE_IDS.has(b.id) ? 0 : 1;
+        return fa - fb;
+      });
+    }
+    return arr;
+  }
+
   if(isFlatSort){
     // 동 필터가 걸려있으면 정렬 모드에서도 어떤 동인지 안내
     if(selectedDongs.size > 0){
@@ -4577,24 +4611,7 @@ function renderSitesList(listEl, filterText){
       frag.appendChild(dongNote);
     }
     // 그룹 없이 하나의 리스트로 정렬
-    if(sortMode === 'distance'){
-      filtered.sort((a,b) => a._dist - b._dist);
-    }else if(sortMode === 'amount-desc'){
-      filtered.sort((a,b) => (b.m || 0) - (a.m || 0));
-    }else if(sortMode === 'amount-asc'){
-      filtered.sort((a,b) => (a.m || 0) - (b.m || 0));
-    }else if(sortMode === 'deadline'){
-      const toTime = v => v ? new Date(v).getTime() : Infinity;
-      filtered.sort((a,b) => toTime(a.e) - toTime(b.e));
-    }else if(sortMode === 'favorite'){
-      filtered.sort((a,b) => {
-        const fa = FAVORITE_SITE_IDS.has(a.id) ? 0 : 1;
-        const fb = FAVORITE_SITE_IDS.has(b.id) ? 0 : 1;
-        if(fa !== fb) return fa - fb;
-        const ia = DONG_ORDER.indexOf(a.d), ib = DONG_ORDER.indexOf(b.d);
-        return (ia<0?999:ia) - (ib<0?999:ib);
-      });
-    }
+    applySortOrder(filtered);
     const itemsDiv = document.createElement('div');
     itemsDiv.className = 'dong-items open';
     filtered.forEach(s => {
@@ -4616,7 +4633,7 @@ function renderSitesList(listEl, filterText){
 
     const forceOpen = !!(filterText || selectedDongs.size > 0 || dongKeys.length === 1);
     dongKeys.forEach(dong => {
-      const items = groups[dong];
+      const items = applySortOrder(groups[dong]);
       const groupDiv = document.createElement('div');
       groupDiv.className = 'dong-group';
 
@@ -4637,6 +4654,10 @@ function renderSitesList(listEl, filterText){
       head.addEventListener('click', () => {
         head.classList.toggle('open');
         itemsDiv.classList.toggle('open');
+        // 동 그룹을 펼칠 때 지도에서 해당 동 영역이 보이도록 이동
+        if(itemsDiv.classList.contains('open') && dongBounds[dong] && !dongBounds[dong].isEmpty()){
+          map.setBounds(dongBounds[dong], 30, 30, 30, 30);
+        }
       });
 
       groupDiv.appendChild(head);
@@ -4843,7 +4864,7 @@ function selectSite(idx, moveMap){
       : '';
   const infoHtml =
     '<div class="ci-close" id="ci-close-btn">&times;</div>' +
-    '<div class="ci-name">' + escapeHtml(s.n) + '<span class="ci-fav-btn" id="ci-fav-btn" data-fav="' + (FAVORITE_SITE_IDS.has(s.id) ? '1' : '0') + '">' + (FAVORITE_SITE_IDS.has(s.id) ? '★' : '☆') + '</span></div>' +
+    '<div class="ci-name"><span class="ci-fav-btn" id="ci-fav-btn" data-fav="' + (FAVORITE_SITE_IDS.has(s.id) ? '1' : '0') + '">' + (FAVORITE_SITE_IDS.has(s.id) ? '★' : '☆') + '</span>' + escapeHtml(s.n) + '</div>' +
     '<div class="ci-row"><b>업체</b> ' + escapeHtml(s.p) + '</div>' +
     '<div class="ci-row"><b>주소</b> ' + escapeHtml(s.a) + '</div>' +
     '<div class="ci-row"><b>공사기간</b> ' + periodText + '</div>' +
