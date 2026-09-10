@@ -2135,7 +2135,9 @@
     }
     #supervision-board-item{font-size:11px;}
     #header-top{
-      padding:7px 12px;
+      padding-bottom:7px;
+      padding-left:12px;
+      padding-right:12px;
       font-size:10px;
       flex-wrap:nowrap;
       gap:6px;
@@ -2402,6 +2404,8 @@
       <input type="password" id="gate-pw" autocomplete="current-password" placeholder="비밀번호를 입력하세요">
       <label id="gate-name-label" style="display:none">이름(소속)</label>
       <input type="text" id="gate-name" style="display:none" autocomplete="off" placeholder="예: 강남지청 홍길동">
+      <label id="gate-otp-label" style="display:none">인증번호</label>
+      <input type="password" id="gate-otp" style="display:none" autocomplete="off" placeholder="관리자에게 받은 인증번호를 입력하세요">
       <div id="gate-remember-row">
         <label class="gate-remember-label">
           <input type="checkbox" id="gate-auto-login" checked> 자동 로그인
@@ -2757,6 +2761,8 @@ document.querySelectorAll('.gate-mode-tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById('gate-name-label').style.display = gateMode === 'signup' ? 'block' : 'none';
     document.getElementById('gate-name').style.display = gateMode === 'signup' ? 'block' : 'none';
+    document.getElementById('gate-otp-label').style.display = gateMode === 'signup' ? 'block' : 'none';
+    document.getElementById('gate-otp').style.display = gateMode === 'signup' ? 'block' : 'none';
     document.getElementById('gate-btn').textContent = gateMode === 'signup' ? '회원가입' : '로그인';
     document.getElementById('gate-forgot-link').style.display = gateMode === 'login' ? 'block' : 'none';
     document.getElementById('gate-err1').textContent = '';
@@ -2836,7 +2842,7 @@ function clearInputErrors(...ids){
     if(el) el.classList.remove('input-error');
   });
 }
-['gate-email', 'gate-pw', 'gate-name'].forEach(id => {
+['gate-email', 'gate-pw', 'gate-name', 'gate-otp'].forEach(id => {
   const el = document.getElementById(id);
   if(el) el.addEventListener('input', () => el.classList.remove('input-error'));
 });
@@ -2848,7 +2854,7 @@ document.getElementById('gate-btn').addEventListener('click', async () => {
   const pendingBox = document.getElementById('gate-pending-msg');
   errBox.textContent = '';
   pendingBox.style.display = 'none';
-  clearInputErrors('gate-email', 'gate-pw', 'gate-name');
+  clearInputErrors('gate-email', 'gate-pw', 'gate-name', 'gate-otp');
 
   if(!rawId || !pw){
     errBox.textContent = '아이디와 비밀번호를 입력해주세요.';
@@ -2868,9 +2874,16 @@ document.getElementById('gate-btn').addEventListener('click', async () => {
   try{
     if(gateMode === 'signup'){
       const name = document.getElementById('gate-name').value.trim();
+      const otp = document.getElementById('gate-otp').value.trim();
       if(!name){
         errBox.textContent = '이름(소속)을 입력해주세요.';
         markInputError('gate-name');
+        btn.disabled = false;
+        return;
+      }
+      if(otp !== 'jb0309'){
+        errBox.textContent = '인증번호가 올바르지 않습니다.';
+        markInputError('gate-otp');
         btn.disabled = false;
         return;
       }
