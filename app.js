@@ -1980,19 +1980,21 @@ function renderSitesList(listEl, filterText){
     }
   }
 
-  // 정렬 드롭바 (항상 표시)
-  const sortBar = document.createElement('div');
-  sortBar.id = 'sort-bar';
-  sortBar.innerHTML =
-    '<label>정렬</label>' +
-    '<select id="sort-select">' +
-      '<option value="distance"' + (sortMode==='distance'?' selected':'') + (myLocation ? '' : ' disabled') + '>내 위치에서 가까운 순</option>' +
-      '<option value="amount-desc"' + (sortMode==='amount-desc'?' selected':'') + '>공사금액 높은순</option>' +
-      '<option value="amount-asc"' + (sortMode==='amount-asc'?' selected':'') + '>공사금액 낮은순</option>' +
-      '<option value="deadline"' + (sortMode==='deadline'?' selected':'') + '>공사기간 임박순</option>' +
-      '<option value="favorite"' + (sortMode==='favorite'?' selected':'') + '>즐겨찾기 우선</option>' +
-    '</select>';
-  frag.appendChild(sortBar);
+  // 정렬 드롭바 - 전체보기(동 구분 없는 단일 목록)에서만 표시. 개별보기는 동마다 '이 동 정렬'만 사용
+  if(listViewMode === 'flat'){
+    const sortBar = document.createElement('div');
+    sortBar.id = 'sort-bar';
+    sortBar.innerHTML =
+      '<label>정렬</label>' +
+      '<select id="sort-select">' +
+        '<option value="distance"' + (sortMode==='distance'?' selected':'') + (myLocation ? '' : ' disabled') + '>내 위치에서 가까운 순</option>' +
+        '<option value="amount-desc"' + (sortMode==='amount-desc'?' selected':'') + '>공사금액 높은순</option>' +
+        '<option value="amount-asc"' + (sortMode==='amount-asc'?' selected':'') + '>공사금액 낮은순</option>' +
+        '<option value="deadline"' + (sortMode==='deadline'?' selected':'') + '>공사기간 임박순</option>' +
+        '<option value="favorite"' + (sortMode==='favorite'?' selected':'') + '>즐겨찾기 우선</option>' +
+      '</select>';
+    frag.appendChild(sortBar);
+  }
 
   if(filtered.length === 0){
     const empty = document.createElement('div');
