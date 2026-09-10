@@ -2128,7 +2128,7 @@ function buildSiteItemEl(s, showDongTag){
     '<div class="samount" title="' + (Number(s.m)||0).toLocaleString('ko-KR') + '원">' + formatAmount(s.m) + '</div>' +
     distHtml;
   div.addEventListener('click', () => {
-    selectSite(s._idx, true);
+    selectSite(s._idx, true, true);
   });
   const favToggle = div.querySelector('.sfav-toggle');
   favToggle.addEventListener('click', (e) => {
@@ -2274,7 +2274,7 @@ function escapeHtml(str){
 }
 
 /* ===== 사업장 선택 -> 지도 이동 + 정보창 ===== */
-function selectSite(idx, moveMap){
+function selectSite(idx, moveMap, fromList){
   const s = CONFIRMED[idx];
   if(!s) return;
 
@@ -2365,20 +2365,10 @@ function selectSite(idx, moveMap){
 
   if(moveMap){
     map.setLevel(4);
-    if(window.innerWidth <= 760){
-      setSheetState('sheet-mini');
-      const proj = map.getProjection();
-      map.setCenter(pos);
-      const sheetPanel = document.getElementById('side-panel');
-      const sheetH = sheetPanel ? sheetPanel.getBoundingClientRect().height : 0;
-      if(sheetH > 0){
-        const point = proj.containerPointFromCoords(pos);
-        point.y -= sheetH / 2;
-        const newPos = proj.coordsFromContainerPoint(point);
-        map.panTo(newPos);
-      }
-    }else{
-      map.panTo(pos);
+    map.panTo(pos);
+    // 목록에서 사업장을 선택하면 목록은 완전히 닫고 정보창만 보이게 함
+    if(window.innerWidth <= 760 && fromList){
+      setSheetState('sheet-collapsed');
     }
   }
 }

@@ -2171,6 +2171,14 @@
       flex-shrink:0;
       margin-right:0 !important;
     }
+    /* 모바일: 다크모드/도움말/로그아웃을 항상 보이는 앞쪽으로, 관리자 전용 버튼은 뒤로(스크롤해야 보임) */
+    #header-top .gov-mark{order:1;}
+    #header-top #header-update-date{order:2;}
+    .theme-switch{order:3;}
+    #btn-help{order:4;}
+    #btn-logout{order:5;}
+    #btn-admin-upload{order:6;}
+    #btn-admin-users{order:7;}
     .theme-switch{
       flex-shrink:0;
       margin-right:0 !important;
