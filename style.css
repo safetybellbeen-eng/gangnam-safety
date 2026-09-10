@@ -1640,6 +1640,32 @@
     box-shadow:0 0 0 4px rgba(24,102,200,.25), 0 2px 8px rgba(0,0,0,.3);
   }
 
+  /* ===== 목록 상단 전체보기/개별보기 탭 ===== */
+  #list-view-tabs{
+    display:flex;
+    gap:0;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+    position:sticky;
+    top:0;
+    z-index:4;
+  }
+  .list-view-tab{
+    flex:1;
+    padding:11px 0;
+    background:var(--panel);
+    border:none;
+    border-bottom:2px solid transparent;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .list-view-tab.active{
+    color:var(--gov-navy);
+    border-bottom-color:var(--gov-navy);
+  }
+
   /* ===== 목록 정렬 드롭다운 ===== */
   #sort-bar{
     display:flex;
@@ -1972,14 +1998,16 @@
     border-radius:12px;
     box-shadow:var(--shadow-3);
     padding:16px 18px;
-    width:280px;
-    max-width:80vw;
+    width:280px !important;
+    max-width:80vw !important;
     font-size:13px;
     line-height:1.6;
     position:relative;
     border-top:3px solid var(--gov-navy);
     animation:info-pop-in .18s cubic-bezier(.2,.9,.3,1.1);
     box-sizing:border-box;
+    white-space:normal;
+    display:block;
   }
   @keyframes info-pop-in{
     from{opacity:0; transform:translateY(6px) scale(.97);}
@@ -1993,6 +2021,7 @@
     color:var(--ink);
     word-break:break-all;
     overflow-wrap:break-word;
+    white-space:normal;
   }
   .ci-fav-btn{
     margin-right:8px;
@@ -2045,7 +2074,7 @@
     padding:7px 0 !important;
     font-size:12px !important;
   }
-  .kakao-info .ci-row{margin:4px 0;color:var(--ink-soft);word-break:break-all;overflow-wrap:break-word;}
+  .kakao-info .ci-row{margin:4px 0;color:var(--ink-soft);word-break:break-all;overflow-wrap:break-word;white-space:normal;}
   .kakao-info .ci-row b{color:var(--ink);font-weight:700;margin-right:3px;}
   .kakao-info .ci-close{
     position:absolute;
@@ -2163,7 +2192,7 @@
     #header-top::-webkit-scrollbar{display:none;}
     #header-top span:not(#header-update-date){display:none;}
     #header-top .gov-mark{flex-shrink:0;}
-    #header-update-date{font-size:9.5px; flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    #header-update-date{font-size:8.5px; flex-shrink:1; min-width:0; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
     #btn-admin-upload, #btn-admin-users, #btn-help, #btn-logout{
       padding:5px 8px !important;
       font-size:10px !important;

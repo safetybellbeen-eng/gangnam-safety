@@ -1354,6 +1354,8 @@ let myLocation = null;     // {lat, lng} 내 위치
 let myLocationMarker = null;
 let sortMode = 'default';  // 전역 정렬 기준: 'default'(등록순) | 'distance' | 'amount-desc' | 'amount-asc' | 'deadline' | 'favorite'
 let dongSortModes = {};    // 동별 개별 정렬 오버라이드: { '신사동': 'amount-desc', ... } - 없으면 전역 sortMode를 따름
+let listViewMode = 'grouped'; // 'grouped'(동별 개별보기) | 'flat'(전체보기, 동 구분 없이 한 목록)
+let openDongGroups = new Set(); // 사용자가 직접 펼친 동 이름 - 재렌더링(정렬 변경 등) 후에도 펼침 상태 유지용
 let locateWatching = false;
 
 const DONG_ORDER = ['신사동','논현1동','논현2동','압구정동','청담동','삼성1동','삼성2동',
@@ -1944,23 +1946,15 @@ function renderSitesList(listEl, filterText){
 
   const frag = document.createDocumentFragment();
 
-  // '전체보기' 항목 - 항상 최상단에 노출. 클릭하면 동 필터를 초기화함
-  const allDiv = document.createElement('div');
-  allDiv.className = 'dong-group';
-  const allHead = document.createElement('div');
-  const totalCntForAll = base.length;
-  const isAllActive = selectedDongs.size === 0;
-  allHead.className = 'dong-head is-all-option' + (isAllActive ? ' is-active-dong' : '');
-  allHead.innerHTML =
-    '<span class="dong-head-name">' + (isAllActive ? '<span class="active-dot"></span>' : '') + '전체보기' + '</span>' +
-    '<span class="cnt-badge">' + totalCntForAll + '</span>';
-  allHead.addEventListener('click', () => {
-    showAllPins();
-  });
-  allDiv.appendChild(allHead);
-  frag.appendChild(allDiv);
+  // '전체보기' / '개별보기' 탭
+  const viewTabs = document.createElement('div');
+  viewTabs.id = 'list-view-tabs';
+  viewTabs.innerHTML =
+    '<button class="list-view-tab' + (listViewMode==='flat'?' active':'') + '" data-mode="flat">전체보기</button>' +
+    '<button class="list-view-tab' + (listViewMode==='grouped'?' active':'') + '" data-mode="grouped">개별보기</button>';
+  frag.appendChild(viewTabs);
 
-  // '즐겨찾기' 그룹 - 즐겨찾기가 있고, 즐겨찾기 전용 필터가 꺼져있을 때만 별도 노출
+  // '즐겨찾기' 그룹 - 즐겨찾기가 있고, 즐겨찾기 전용 필터가 꺼져있을 때만 별도 노출 (두 모드 공통)
   if(!showFavoritesOnly && FAVORITE_SITE_IDS.size > 0){
     const favSites = base.filter(s => FAVORITE_SITE_IDS.has(s.id));
     if(favSites.length > 0){
@@ -2008,6 +2002,7 @@ function renderSitesList(listEl, filterText){
     listEl.innerHTML = '';
     listEl.appendChild(frag);
     bindSortSelect(listEl);
+    bindListViewTabs(listEl);
     return;
   }
 
@@ -2032,6 +2027,22 @@ function renderSitesList(listEl, filterText){
     return arr;
   }
 
+  if(listViewMode === 'flat'){
+    // 전체보기: 동 구분 없이 하나의 목록으로, 전역 정렬 기준만 적용
+    const flatItems = applySortOrder([...filtered], sortMode);
+    const itemsDiv = document.createElement('div');
+    itemsDiv.className = 'dong-items open';
+    flatItems.forEach(s => {
+      itemsDiv.appendChild(buildSiteItemEl(s, true));
+    });
+    frag.appendChild(itemsDiv);
+    listEl.innerHTML = '';
+    listEl.appendChild(frag);
+    bindSortSelect(listEl);
+    bindListViewTabs(listEl);
+    return;
+  }
+
   const groups = {};
   filtered.forEach(s => {
     const key = s.sd || s.d || '기타';
@@ -2053,8 +2064,9 @@ function renderSitesList(listEl, filterText){
     'favorite': '즐겨찾기 우선'
   };
 
-  const forceOpen = !!(filterText || selectedDongs.size > 0 || dongKeys.length === 1);
+  const forceOpenAll = !!(filterText || selectedDongs.size > 0 || dongKeys.length === 1);
   dongKeys.forEach(dong => {
+    const forceOpen = forceOpenAll || openDongGroups.has(dong);
     const dongSortMode = dongSortModes[dong] || sortMode;
     const items = applySortOrder(groups[dong], dongSortMode);
     const groupDiv = document.createElement('div');
@@ -2095,8 +2107,14 @@ function renderSitesList(listEl, filterText){
     head.addEventListener('click', () => {
       head.classList.toggle('open');
       itemsDiv.classList.toggle('open');
+      const nowOpen = itemsDiv.classList.contains('open');
+      if(nowOpen){
+        openDongGroups.add(dong);
+      }else{
+        openDongGroups.delete(dong);
+      }
       // 동 그룹을 펼칠 때 지도에서 해당 동 영역이 보이도록 이동
-      if(itemsDiv.classList.contains('open') && dongBounds[dong] && !dongBounds[dong].isEmpty()){
+      if(nowOpen && dongBounds[dong] && !dongBounds[dong].isEmpty()){
         map.setBounds(dongBounds[dong], 30, 30, 30, 30);
       }
     });
@@ -2109,6 +2127,7 @@ function renderSitesList(listEl, filterText){
   listEl.innerHTML = '';
   listEl.appendChild(frag);
   bindSortSelect(listEl);
+  bindListViewTabs(listEl);
 }
 
 function buildSiteItemEl(s, showDongTag){
@@ -2154,6 +2173,16 @@ function bindSortSelect(listEl){
       renderSideList();
     });
   }
+}
+
+function bindListViewTabs(listEl){
+  listEl.querySelectorAll('.list-view-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if(listViewMode === tab.dataset.mode) return;
+      listViewMode = tab.dataset.mode;
+      renderSideList();
+    });
+  });
 }
 
 let reviewDongFilter = '전체';
@@ -2332,6 +2361,10 @@ function selectSite(idx, moveMap, fromList){
     content = document.createElement('div');
     content.className = 'kakao-info';
     content.innerHTML = infoHtml;
+    // 카카오맵 CustomOverlay가 부모 wrapper를 콘텐츠 크기에 맞춰 늘리는 것을 막기 위해 인라인으로 폭을 강제
+    content.style.width = '280px';
+    content.style.maxWidth = '80vw';
+    content.style.boxSizing = 'border-box';
 
     currentInfo = new kakao.maps.CustomOverlay({
       position: pos,
@@ -2366,8 +2399,8 @@ function selectSite(idx, moveMap, fromList){
   if(moveMap){
     map.setLevel(4);
     map.panTo(pos);
-    // 목록에서 사업장을 선택하면 목록은 완전히 닫고 정보창만 보이게 함
-    if(window.innerWidth <= 760 && fromList){
+    // 모바일에서는 핀/목록 클릭 관계없이 사업장을 선택하면 항상 목록을 닫고 정보창만 보이게 함
+    if(window.innerWidth <= 760){
       setSheetState('sheet-collapsed');
     }
   }
@@ -2944,6 +2977,9 @@ function goToKakaoPlace(place){
     content = document.createElement('div');
     content.className = 'kakao-info';
     content.innerHTML = infoHtml;
+    content.style.width = '280px';
+    content.style.maxWidth = '80vw';
+    content.style.boxSizing = 'border-box';
     currentInfo = new kakao.maps.CustomOverlay({
       position: pos,
       content: content,
