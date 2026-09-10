@@ -1847,11 +1847,13 @@ function renderActiveFilterBar(){
 
 /* ===== 모바일 하단 시트 인터랙션 (2단계: 접힘/펼침 + 드래그) ===== */
 const SHEET_STATES = ['sheet-collapsed', 'sheet-mini', 'sheet-open'];
+let sheetOpenLockedUntil = 0; // 이 시각(ms) 이전에는 sheet-open으로 전환하지 않음 (핀 선택 직후 목록이 실수로 열리는 것 방지)
 
 function setSheetState(state){
   const panel = document.getElementById('side-panel');
   const openBtn = document.getElementById('btn-list-open');
   if(!panel) return;
+  if(state === 'sheet-open' && Date.now() < sheetOpenLockedUntil) return;
   SHEET_STATES.forEach(s => panel.classList.remove(s));
   panel.classList.add(state);
   if(openBtn){
@@ -2320,7 +2322,10 @@ function selectSite(idx, moveMap, fromList){
       parentGroup.classList.add('open');
       parentGroup.previousElementSibling.classList.add('open');
     }
-    targetEl.scrollIntoView({block:'nearest'});
+    // 목록에서 직접 클릭했을 때만 스크롤 이동 (핀 클릭 시에는 목록이 안 보이므로 불필요)
+    if(fromList){
+      targetEl.scrollIntoView({block:'nearest'});
+    }
   }
 
   const pos = new kakao.maps.LatLng(s.lat, s.lng);
@@ -2403,7 +2408,11 @@ function selectSite(idx, moveMap, fromList){
     map.panTo(pos);
     // 모바일에서는 핀/목록 클릭 관계없이 사업장을 선택하면 항상 목록을 닫고 정보창만 보이게 함
     if(window.innerWidth <= 760){
+      // 지도 확대/이동 애니메이션 중 다른 요소(예: 목록보기 버튼)가 실수로 눌려도
+      // 0.6초간은 목록이 다시 열리지 않도록 잠금
+      sheetOpenLockedUntil = Date.now() + 600;
       setSheetState('sheet-collapsed');
+      requestAnimationFrame(() => setSheetState('sheet-collapsed'));
     }
   }
 }
