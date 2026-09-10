@@ -1391,10 +1391,9 @@ function initApp(){
         if(panel && panel.classList.contains('sheet-open')){
           setSheetState('sheet-collapsed');
         }
-        const mobileCard = document.getElementById('mobile-pin-card');
-        if(mobileCard){
-          mobileCard.style.display = 'none';
-          mobileCard.innerHTML = '';
+        if(currentInfo){
+          currentInfo.setMap(null);
+          currentInfo = null;
         }
       }
     });
@@ -2360,9 +2359,23 @@ function selectSite(idx, moveMap, fromList){
 
   let content;
   if(isMobile){
-    mobileCard.innerHTML = infoHtml;
-    mobileCard.style.display = 'block';
-    content = mobileCard;
+    // 모바일도 웹과 동일하게 CustomOverlay로 핀 위치 기준 말풍선을 띄움 (내용은 웹과 완전히 동일)
+    mobileCard.style.display = 'none';
+    mobileCard.innerHTML = '';
+    content = document.createElement('div');
+    content.className = 'kakao-info kakao-info-mobile';
+    content.innerHTML = infoHtml;
+    content.style.width = '260px';
+    content.style.maxWidth = 'calc(100vw - 32px)';
+    content.style.boxSizing = 'border-box';
+
+    currentInfo = new kakao.maps.CustomOverlay({
+      position: pos,
+      content: content,
+      yAnchor: 1.15,
+      zIndex: 10
+    });
+    currentInfo.setMap(map);
   }else{
     mobileCard.style.display = 'none';
     content = document.createElement('div');
@@ -2383,10 +2396,7 @@ function selectSite(idx, moveMap, fromList){
   }
 
   content.querySelector('#ci-close-btn').addEventListener('click', () => {
-    if(isMobile){
-      mobileCard.style.display = 'none';
-      mobileCard.innerHTML = '';
-    }else{
+    if(currentInfo){
       currentInfo.setMap(null);
       currentInfo = null;
     }
@@ -2405,14 +2415,26 @@ function selectSite(idx, moveMap, fromList){
 
   if(moveMap){
     map.setLevel(4);
-    map.panTo(pos);
-    // 모바일에서는 핀/목록 클릭 관계없이 사업장을 선택하면 항상 목록을 닫고 정보창만 보이게 함
     if(window.innerWidth <= 760){
+      // 모바일: 핀이 화면 중앙보다 아래쪽에 오도록 이동시켜, 그 위에 뜨는 정보카드가
+      // 헤더/필터 영역과 겹치지 않고 핀을 정확히 가리킬 수 있는 공간을 확보함
+      map.panTo(pos);
+      setTimeout(() => {
+        const proj = map.getProjection();
+        const point = proj.containerPointFromCoords(pos);
+        // 화면 중앙에 올 좌표를 핀보다 위쪽(화면 픽셀 y가 작은 쪽) 지점으로 잡으면,
+        // 그 지점이 중앙에 놓이면서 실제 핀은 화면 아래쪽으로 밀려 카드가 뜰 공간이 생김
+        point.y -= Math.round(window.innerHeight * 0.22);
+        const shiftedPos = proj.coordsFromContainerPoint(point);
+        map.panTo(shiftedPos);
+      }, 0);
       // 지도 확대/이동 애니메이션 중 다른 요소(예: 목록보기 버튼)가 실수로 눌려도
       // 0.6초간은 목록이 다시 열리지 않도록 잠금
       sheetOpenLockedUntil = Date.now() + 600;
       setSheetState('sheet-collapsed');
       requestAnimationFrame(() => setSheetState('sheet-collapsed'));
+    }else{
+      map.panTo(pos);
     }
   }
 }
@@ -2981,9 +3003,21 @@ function goToKakaoPlace(place){
 
   let content;
   if(isMobile){
-    mobileCard.innerHTML = infoHtml;
-    mobileCard.style.display = 'block';
-    content = mobileCard;
+    mobileCard.style.display = 'none';
+    mobileCard.innerHTML = '';
+    content = document.createElement('div');
+    content.className = 'kakao-info kakao-info-mobile';
+    content.innerHTML = infoHtml;
+    content.style.width = '260px';
+    content.style.maxWidth = 'calc(100vw - 32px)';
+    content.style.boxSizing = 'border-box';
+    currentInfo = new kakao.maps.CustomOverlay({
+      position: pos,
+      content: content,
+      yAnchor: 1.15,
+      zIndex: 10
+    });
+    currentInfo.setMap(map);
   }else{
     content = document.createElement('div');
     content.className = 'kakao-info';
@@ -3001,10 +3035,7 @@ function goToKakaoPlace(place){
   }
 
   content.querySelector('#ci-close-btn').addEventListener('click', () => {
-    if(isMobile){
-      mobileCard.style.display = 'none';
-      mobileCard.innerHTML = '';
-    }else{
+    if(currentInfo){
       currentInfo.setMap(null);
       currentInfo = null;
     }
