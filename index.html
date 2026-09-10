@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#0b3d6e">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="사업장지도">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -1695,6 +1695,36 @@
   }
   #sort-select:focus{border-color:var(--gov-blue);outline:none;}
   #sort-select:disabled{opacity:.5;cursor:not-allowed;}
+
+  /* 동을 펼쳤을 때 그 동 안에만 나타나는 정렬 드롭바 - 전역보다 한 단계 작고 절제된 톤 */
+  .dong-sort-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 18px 8px 24px;
+    background:var(--gov-blue-light);
+    border-bottom:1px solid var(--line-soft);
+    font-size:11px;
+  }
+  .dong-sort-bar label{
+    color:var(--ink-soft);
+    font-weight:600;
+    margin-right:6px;
+    flex-shrink:0;
+  }
+  .dong-sort-select{
+    padding:5px 8px;
+    border:1.5px solid var(--line);
+    border-radius:6px;
+    font-size:11.5px;
+    font-weight:600;
+    color:var(--ink);
+    background:var(--panel);
+    cursor:pointer;
+    max-width:180px;
+  }
+  .dong-sort-select:focus{border-color:var(--gov-blue);outline:none;}
+  .dong-sort-select:disabled{opacity:.5;cursor:not-allowed;}
 
   /* ===== 목록 상단 '전체보기' 항목은 .dong-head.is-all-option 스타일 재사용 ===== */
 
@@ -4002,7 +4032,8 @@ let selectedAmountKeys = new Set();  // 비어있으면 '전체'
 let baseBounds = null;     // 강남구 전체 bounds (전체보기 복귀용)
 let myLocation = null;     // {lat, lng} 내 위치
 let myLocationMarker = null;
-let sortMode = 'default';  // 'default' | 'distance'
+let sortMode = 'default';  // 전역 정렬 기준: 'default'(등록순) | 'distance' | 'amount-desc' | 'amount-asc' | 'deadline' | 'favorite'
+let dongSortModes = {};    // 동별 개별 정렬 오버라이드: { '신사동': 'amount-desc', ... } - 없으면 전역 sortMode를 따름
 let locateWatching = false;
 
 const DONG_ORDER = ['신사동','논현1동','논현2동','압구정동','청담동','삼성1동','삼성2동',
@@ -4641,7 +4672,6 @@ function renderSitesList(listEl, filterText){
   sortBar.innerHTML =
     '<label>정렬</label>' +
     '<select id="sort-select">' +
-      '<option value="default"' + (sortMode==='default'?' selected':'') + '>동 순서</option>' +
       '<option value="distance"' + (sortMode==='distance'?' selected':'') + (myLocation ? '' : ' disabled') + '>내 위치에서 가까운 순</option>' +
       '<option value="amount-desc"' + (sortMode==='amount-desc'?' selected':'') + '>공사금액 높은순</option>' +
       '<option value="amount-asc"' + (sortMode==='amount-asc'?' selected':'') + '>공사금액 낮은순</option>' +
@@ -4661,21 +4691,18 @@ function renderSitesList(listEl, filterText){
     return;
   }
 
-  const isFlatSort = ['distance', 'amount-desc', 'amount-asc', 'deadline', 'favorite'].includes(sortMode) &&
-    !(sortMode === 'distance' && !myLocation);
-
-  // 정렬 기준에 맞게 배열을 정렬하는 공통 함수 (동 그룹 내부 정렬에도 재사용)
-  function applySortOrder(arr){
-    if(sortMode === 'distance' && myLocation){
+  // 정렬 기준에 맞게 배열을 정렬하는 공통 함수 (전역 정렬 + 동별 개별 정렬 오버라이드 양쪽에서 재사용)
+  function applySortOrder(arr, mode){
+    if(mode === 'distance' && myLocation){
       arr.sort((a,b) => a._dist - b._dist);
-    }else if(sortMode === 'amount-desc'){
+    }else if(mode === 'amount-desc'){
       arr.sort((a,b) => (b.m || 0) - (a.m || 0));
-    }else if(sortMode === 'amount-asc'){
+    }else if(mode === 'amount-asc'){
       arr.sort((a,b) => (a.m || 0) - (b.m || 0));
-    }else if(sortMode === 'deadline'){
+    }else if(mode === 'deadline'){
       const toTime = v => v ? new Date(v).getTime() : Infinity;
       arr.sort((a,b) => toTime(a.e) - toTime(b.e));
-    }else if(sortMode === 'favorite'){
+    }else if(mode === 'favorite'){
       arr.sort((a,b) => {
         const fa = FAVORITE_SITE_IDS.has(a.id) ? 0 : 1;
         const fb = FAVORITE_SITE_IDS.has(b.id) ? 0 : 1;
@@ -4685,69 +4712,79 @@ function renderSitesList(listEl, filterText){
     return arr;
   }
 
-  if(isFlatSort){
-    // 동 필터가 걸려있으면 정렬 모드에서도 어떤 동인지 안내
-    if(selectedDongs.size > 0){
-      const dongNote = document.createElement('div');
-      dongNote.id = 'flat-sort-dong-note';
-      dongNote.textContent = [...selectedDongs].join(', ') + ' · ' + filtered.length + '건';
-      frag.appendChild(dongNote);
-    }
-    // 그룹 없이 하나의 리스트로 정렬
-    applySortOrder(filtered);
+  const groups = {};
+  filtered.forEach(s => {
+    const key = s.sd || s.d || '기타';
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(s);
+  });
+
+  const dongKeys = Object.keys(groups).sort((a,b) => {
+    const ia = DONG_ORDER.indexOf(a), ib = DONG_ORDER.indexOf(b);
+    return (ia<0?999:ia) - (ib<0?999:ib);
+  });
+
+  const SORT_LABELS = {
+    'default': '등록순',
+    'distance': '내 위치에서 가까운 순',
+    'amount-desc': '공사금액 높은순',
+    'amount-asc': '공사금액 낮은순',
+    'deadline': '공사기간 임박순',
+    'favorite': '즐겨찾기 우선'
+  };
+
+  const forceOpen = !!(filterText || selectedDongs.size > 0 || dongKeys.length === 1);
+  dongKeys.forEach(dong => {
+    const dongSortMode = dongSortModes[dong] || sortMode;
+    const items = applySortOrder(groups[dong], dongSortMode);
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'dong-group';
+
+    const head = document.createElement('div');
+    head.className = 'dong-head' + (forceOpen ? ' open' : '') + (selectedDongs.has(dong) ? ' is-active-dong' : '');
+    head.innerHTML =
+      '<span class="dong-head-name">' + (selectedDongs.has(dong) ? '<span class="active-dot"></span>' : '') + escapeHtml(dong) + '</span>' +
+      '<span><span class="cnt">' + items.length + '건</span> <span class="arrow">▶</span></span>';
+
     const itemsDiv = document.createElement('div');
-    itemsDiv.className = 'dong-items open';
-    filtered.forEach(s => {
-      itemsDiv.appendChild(buildSiteItemEl(s, true));
+    itemsDiv.className = 'dong-items' + (forceOpen ? ' open' : '');
+
+    // 동 내부 전용 정렬 드롭다운 (펼쳤을 때만 의미 있으므로 목록 맨 위에 삽입)
+    const dongSortBar = document.createElement('div');
+    dongSortBar.className = 'dong-sort-bar';
+    dongSortBar.innerHTML =
+      '<label>이 동 정렬</label>' +
+      '<select class="dong-sort-select">' +
+        Object.keys(SORT_LABELS).map(key => {
+          const disabled = (key === 'distance' && !myLocation) ? ' disabled' : '';
+          const selected = (dongSortMode === key) ? ' selected' : '';
+          return '<option value="' + key + '"' + selected + disabled + '>' + SORT_LABELS[key] + '</option>';
+        }).join('') +
+      '</select>';
+    dongSortBar.querySelector('.dong-sort-select').addEventListener('click', (e) => e.stopPropagation());
+    dongSortBar.querySelector('.dong-sort-select').addEventListener('change', (e) => {
+      dongSortModes[dong] = e.target.value;
+      renderSideList();
     });
-    frag.appendChild(itemsDiv);
-  }else{
-    const groups = {};
-    filtered.forEach(s => {
-      const key = s.sd || s.d || '기타';
-      if(!groups[key]) groups[key] = [];
-      groups[key].push(s);
+    itemsDiv.appendChild(dongSortBar);
+
+    items.forEach(s => {
+      itemsDiv.appendChild(buildSiteItemEl(s, false));
     });
 
-    const dongKeys = Object.keys(groups).sort((a,b) => {
-      const ia = DONG_ORDER.indexOf(a), ib = DONG_ORDER.indexOf(b);
-      return (ia<0?999:ia) - (ib<0?999:ib);
+    head.addEventListener('click', () => {
+      head.classList.toggle('open');
+      itemsDiv.classList.toggle('open');
+      // 동 그룹을 펼칠 때 지도에서 해당 동 영역이 보이도록 이동
+      if(itemsDiv.classList.contains('open') && dongBounds[dong] && !dongBounds[dong].isEmpty()){
+        map.setBounds(dongBounds[dong], 30, 30, 30, 30);
+      }
     });
 
-    const forceOpen = !!(filterText || selectedDongs.size > 0 || dongKeys.length === 1);
-    dongKeys.forEach(dong => {
-      const items = applySortOrder(groups[dong]);
-      const groupDiv = document.createElement('div');
-      groupDiv.className = 'dong-group';
-
-      const head = document.createElement('div');
-      head.className = 'dong-head' + (forceOpen ? ' open' : '') + (selectedDongs.has(dong) ? ' is-active-dong' : '');
-      head.innerHTML =
-        '<span class="dong-head-name">' + (selectedDongs.has(dong) ? '<span class="active-dot"></span>' : '') + escapeHtml(dong) + '</span>' +
-        '<span><span class="cnt">' + items.length + '건</span> <span class="arrow">▶</span></span>';
-
-      const itemsDiv = document.createElement('div');
-      itemsDiv.className = 'dong-items' + (forceOpen ? ' open' : '');
-
-
-      items.forEach(s => {
-        itemsDiv.appendChild(buildSiteItemEl(s, false));
-      });
-
-      head.addEventListener('click', () => {
-        head.classList.toggle('open');
-        itemsDiv.classList.toggle('open');
-        // 동 그룹을 펼칠 때 지도에서 해당 동 영역이 보이도록 이동
-        if(itemsDiv.classList.contains('open') && dongBounds[dong] && !dongBounds[dong].isEmpty()){
-          map.setBounds(dongBounds[dong], 30, 30, 30, 30);
-        }
-      });
-
-      groupDiv.appendChild(head);
-      groupDiv.appendChild(itemsDiv);
-      frag.appendChild(groupDiv);
-    });
-  }
+    groupDiv.appendChild(head);
+    groupDiv.appendChild(itemsDiv);
+    frag.appendChild(groupDiv);
+  });
 
   listEl.innerHTML = '';
   listEl.appendChild(frag);
@@ -4789,6 +4826,7 @@ function bindSortSelect(listEl){
   if(sel){
     sel.addEventListener('change', () => {
       sortMode = sel.value;
+      dongSortModes = {}; // 전역 정렬을 바꾸면 동별 개별 정렬 오버라이드는 초기화(예측 가능한 동작을 위해)
       if(sortMode === 'distance' && myLocation){
         map.setLevel(6);
         map.panTo(new kakao.maps.LatLng(myLocation.lat, myLocation.lng));
