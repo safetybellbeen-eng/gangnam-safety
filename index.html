@@ -2091,6 +2091,7 @@
   #mobile-pin-card{
     position:absolute;
     left:8px; right:8px; bottom:12px;
+    top:calc(env(safe-area-inset-top) + 50px);
     background:var(--panel);
     border-radius:var(--radius-md);
     box-shadow:var(--shadow-3);
@@ -2098,8 +2099,13 @@
     z-index:15;
     border-top:3px solid var(--gov-navy);
     animation:pin-card-slide-up .2s cubic-bezier(.2,.9,.3,1.1);
-    max-height:46vh;
+    max-height:none;
+    height:fit-content;
     overflow-y:auto;
+    transition:bottom .2s ease;
+  }
+  #mobile-pin-card.above-mini-sheet{
+    bottom:calc(17vh + 12px);
   }
   @keyframes pin-card-slide-up{
     from{opacity:0; transform:translateY(16px);}
@@ -4502,6 +4508,15 @@ function setSheetState(state){
     openBtn.textContent = '☰ 목록보기';
     openBtn.classList.remove('is-open');
   }
+  // 전체 목록(sheet-open)으로 전환될 때는 지도 위 정보창이 목록과 겹치지 않도록 확실히 닫음
+  if(state === 'sheet-open'){
+    if(currentInfo){ currentInfo.setMap(null); currentInfo = null; }
+    const mobileCard = document.getElementById('mobile-pin-card');
+    if(mobileCard){ mobileCard.style.display = 'none'; mobileCard.innerHTML = ''; }
+  }
+  // 목록이 하단에 일부(mini) 걸쳐 있을 때는 정보창이 그 위로 밀려 올라가도록 클래스 토글
+  const mobileCardEl = document.getElementById('mobile-pin-card');
+  if(mobileCardEl) mobileCardEl.classList.toggle('above-mini-sheet', state === 'sheet-mini');
 }
 
 function attachMobileSheet(){
