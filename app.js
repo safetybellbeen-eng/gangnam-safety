@@ -690,7 +690,7 @@ function attachNoteHandlers(content, siteId){
 
 /* ===== gnmap_sites → 지도 렌더링용 CONFIRMED/REVIEW 형식으로 변환 ===== */
 async function loadSitesFromSupabase(){
-  const { data, error } = await sb.from('gnmap_sites').select('*').order('id');
+  const { data, error } = await sb.from('gnmap_sites').select('*').eq('is_active', true).order('id');
   if(error){
     showAppAlert('데이터를 불러오지 못했습니다.\n' + friendlyError(error), {type:'error'});
     window.CONFIRMED = [];
@@ -887,7 +887,8 @@ function mapForm1Row(row){
     period_end: period.end,
     accident_report_count: row['산재조사표(건)'] !== undefined && row['산재조사표(건)'] !== '' ? Number(row['산재조사표(건)']) : null,
     supervision_count: row['지도감독(건)'] !== undefined && row['지도감독(건)'] !== '' ? Number(row['지도감독(건)']) : null,
-    source_form: 'form1'
+    source_form: 'form1',
+    business_start_no: row['사업개시번호'] !== undefined && row['사업개시번호'] !== '' ? String(row['사업개시번호']).trim() : null
   };
 }
 
@@ -901,7 +902,8 @@ function mapForm2Row(row){
     period_end: parseYyyymmdd(row['공사종료일']),
     accident_report_count: null,
     supervision_count: null,
-    source_form: 'form2'
+    source_form: 'form2',
+    business_start_no: row['사업개시번호'] !== undefined && row['사업개시번호'] !== '' ? String(row['사업개시번호']).trim() : null
   };
 }
 
@@ -949,7 +951,8 @@ document.getElementById('upload-file-input').addEventListener('change', async (e
         period_end: null,
         accident_report_count: null,
         supervision_count: null,
-        source_form: 'unknown'
+        source_form: 'unknown',
+        business_start_no: r['사업개시번호'] !== undefined && r['사업개시번호'] !== '' ? String(r['사업개시번호']).trim() : null
       }));
       uploadDetectedForm = 'unknown';
     }else{
@@ -962,7 +965,7 @@ document.getElementById('upload-file-input').addEventListener('change', async (e
     statusEl.textContent =
       `${formLabel} 인식 완료\n` +
       `총 ${uploadParsedRows.length}건 (주소 없음: ${noAddr}건)\n\n` +
-      `"업로드 시작"을 누르면 기존 데이터를 전부 삭제하고 이 데이터로 교체합니다.`;
+      `"업로드 시작"을 누르면 사업개시번호를 기준으로 기존 사업장은 갱신, 신규 사업장은 추가됩니다.\n이 파일에 없는 기존 사업장은 삭제되지 않고 비활성 처리됩니다.`;
     startBtn.disabled = false;
   }catch(err){
     statusEl.textContent = '파일을 읽는 중 오류가 발생했습니다: ' + err.message;
@@ -972,7 +975,7 @@ document.getElementById('upload-file-input').addEventListener('change', async (e
 document.getElementById('btn-upload-start').addEventListener('click', async () => {
   if(!uploadParsedRows || !uploadParsedRows.length) return;
 
-  const confirmMsg = `총 ${uploadParsedRows.length}건의 데이터로 기존 사업장 데이터를 전부 교체합니다.\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`;
+  const confirmMsg = `총 ${uploadParsedRows.length}건의 데이터를 반영합니다.\n사업개시번호가 일치하는 기존 사업장은 갱신되고, 새로운 사업장은 추가됩니다. 이 파일에 없는 기존 사업장은 비활성 처리됩니다(삭제되지 않음). 계속하시겠습니까?`;
   const okToProceed = await showAppConfirm(confirmMsg, {danger:true, okLabel:'교체 시작'});
   if(!okToProceed) return;
 
@@ -1025,48 +1028,47 @@ document.getElementById('btn-upload-start').addEventListener('click', async () =
     progressText.textContent = `주소 확인 중... ${done}/${total}`;
   }
 
-  // 2) Supabase 갈아끼우기: 기존 전체 삭제 → 신규 일괄 삽입
-  progressText.textContent = '기존 데이터 삭제 중...';
+  // 2) Supabase에 원자적으로 반영: business_start_no 기준 UPDATE/INSERT + 사라진 사업장 소프트삭제
+  //    RPC 함수 하나(gnmap_import_sites) 안에서 전부 처리되므로 DB 트랜잭션이 보장되며,
+  //    중간에 실패해도 PostgreSQL이 자동으로 전체 롤백한다 (기존 데이터는 그대로 유지됨).
+  progressText.textContent = '서버에 반영 중...';
   try{
-    const { error: delError } = await sb.from('gnmap_sites').delete().gt('id', 0);
-    if(delError) throw delError;
+    const payload = rows.map(r => ({
+      business_start_no: r.business_start_no || null,
+      company_name: r.company_name,
+      site_name: r.site_name,
+      address: r.address,
+      lat: r.lat,
+      lng: r.lng,
+      dong: r.dong,
+      amount: r.amount,
+      period_start: r.period_start,
+      period_end: r.period_end,
+      accident_report_count: r.accident_report_count,
+      supervision_count: r.supervision_count,
+      status: r.status
+    }));
 
     progressFill.style.width = '95%';
-    progressText.textContent = '새 데이터 저장 중...';
 
-    // 대량 삽입은 500건 단위로 나눠서 처리
-    const chunkSize = 500;
-    for(let i = 0; i < rows.length; i += chunkSize){
-      const chunk = rows.slice(i, i + chunkSize).map(r => ({
-        company_name: r.company_name,
-        site_name: r.site_name,
-        address: r.address,
-        lat: r.lat,
-        lng: r.lng,
-        dong: r.dong,
-        amount: r.amount,
-        period_start: r.period_start,
-        period_end: r.period_end,
-        accident_report_count: r.accident_report_count,
-        supervision_count: r.supervision_count,
-        source_form: r.source_form,
-        status: r.status
-      }));
-      const { error: insError } = await sb.from('gnmap_sites').insert(chunk);
-      if(insError) throw insError;
-    }
+    const { data: rpcResult, error: rpcError } = await sb.rpc('gnmap_import_sites', {
+      p_rows: payload,
+      p_source_form: uploadDetectedForm
+    });
+    if(rpcError) throw rpcError;
 
     progressFill.style.width = '100%';
     progressText.textContent = '완료';
     lastOwnUploadAt = Date.now();
 
-    // 업로드 히스토리 기록 (실패해도 업로드 자체는 이미 성공했으므로 조용히 무시)
     const confirmedCnt = rows.filter(r => r.status === 'confirmed').length;
     const reviewCnt = rows.length - confirmedCnt;
+    const deactivatedCnt = rpcResult ? (rpcResult.deactivated || 0) : 0;
     statusEl.innerHTML =
       `<b>업로드 완료</b><br>` +
       `총 ${rows.length}건 반영 · 확정 ${confirmedCnt}건` +
       (reviewCnt > 0 ? ` · <span style="color:var(--warn)">확인필요 ${reviewCnt}건</span>` : '') +
+      (deactivatedCnt > 0 ? `<br><span style="font-size:11px;color:var(--ink-soft)">이번 파일에 없는 기존 사업장 ${deactivatedCnt}건은 비활성 처리되었습니다(데이터는 보존됨).</span>` : '') +
       (reviewCnt > 0 ? `<br><span style="font-size:11px;color:var(--ink-soft)">주소를 찾지 못한 ${reviewCnt}건은 "확인필요" 탭에서 확인해주세요.</span>` : '');
 
     sb.from('gnmap_upload_history').insert({
@@ -1083,7 +1085,7 @@ document.getElementById('btn-upload-start').addEventListener('click', async () =
     initApp();
     showToast(`업로드 완료 · 확정 ${confirmedCnt}건 / 확인필요 ${reviewCnt}건`, 'success');
   }catch(err){
-    statusEl.textContent = '업로드 중 오류가 발생했습니다.\n' + friendlyError(err) + '\n기존 데이터가 삭제되었을 수 있으니 다시 시도해주세요.';
+    statusEl.textContent = '업로드 중 오류가 발생했습니다.\n' + friendlyError(err) + '\n서버 트랜잭션이 실패하여 기존 데이터는 변경되지 않았습니다. 다시 시도해주세요.';
   }finally{
     startBtn.disabled = false;
     document.getElementById('upload-file-input').disabled = false;
